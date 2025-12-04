@@ -7,10 +7,11 @@ app.use(cors()); //lets React talk to your Node API
 app.use(express.json()); //allows your API to read JSON bodies
 
 // Routes
-const productRoutes = require('./routes/productRoutes');
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
+app.use("/api/users", require("./routes/userRoutes"));
+app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
+app.use('/api/order',  require('./routes/orderRoutes'));
 
 module.exports = app;
 
