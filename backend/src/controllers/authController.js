@@ -33,7 +33,7 @@ try{
     
     const exist = await User.findOne({where: {email}});
     if(exist) return res.status(400).json({message:"This email is already used"});
-    const hashed = await bcrypt.hash(password,10);
+    const hashed = await bcrypt.hash(password,10);a
 
     const user = await User.create({
         name,

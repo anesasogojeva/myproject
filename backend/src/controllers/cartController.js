@@ -76,3 +76,21 @@ exports.removeItem = async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+// cartController.js
+exports.updateQuantity = async (req, res) => {
+  const cartItemId = req.params.id;
+  const { quantity } = req.body;
+
+  try {
+    const item = await CartItem.findByPk(cartItemId);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+
+    item.quantity = quantity;
+    await item.save();
+
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

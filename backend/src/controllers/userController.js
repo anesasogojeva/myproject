@@ -1,4 +1,5 @@
 const User = require("../models/mysql/User");
+const bcrypt = require('bcryptjs');
 
 exports.getAllUsers = async (req, res) => {
     try {
@@ -52,4 +53,37 @@ exports.deleteUser = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
+};
+
+exports.createUserByAdmin = async (req, res) => {
+  try {
+    // Only admin can do this
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can create users" });
+    }
+
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const exist = await User.findOne({ where: { email } });
+    if (exist) return res.status(400).json({ message: "Email already exists" });
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashed,
+      role,
+    });
+
+    res.json({ message: "User created successfully", user });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message });
+  }
 };
