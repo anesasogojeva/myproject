@@ -57,7 +57,6 @@ exports.deleteUser = async (req, res) => {
 
 exports.createUserByAdmin = async (req, res) => {
   try {
-    // Only admin can do this
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Only admins can create users" });
     }
@@ -66,6 +65,14 @@ exports.createUserByAdmin = async (req, res) => {
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Allowed roles
+    const allowedRoles = ["user", "admin", "dietitian"];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role. Allowed roles: user, admin, dietitian",
+      });
     }
 
     const exist = await User.findOne({ where: { email } });
@@ -81,9 +88,9 @@ exports.createUserByAdmin = async (req, res) => {
     });
 
     res.json({ message: "User created successfully", user });
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: err.message });
   }
 };
+

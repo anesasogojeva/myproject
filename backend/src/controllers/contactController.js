@@ -25,3 +25,19 @@ exports.getAllContacts = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch contacts" });
   }
 };
+
+exports.deleteContact = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const contact = await Contact.findByPk(id);
+
+    if (!contact) return res.status(404).json({ error: "Contact not found" });
+
+    await contact.destroy();
+    res.status(200).json({ message: "Contact deleted" });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete contact" });
+  }
+};

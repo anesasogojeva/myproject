@@ -8,10 +8,23 @@ const Order = sequelize.define('Order', {
     status: {
         type: DataTypes.STRING,
         defaultValue: 'pending'   // pending, paid, shipped, canceled
-    }
+    },
+    
+    paymentMethod: {
+        type: DataTypes.STRING,  
+        allowNull: true
+    },
+    shippingAddress: {
+  type: DataTypes.STRING,
+  allowNull: false,
+}
+    ,
+stripePaymentIntentId: { type: DataTypes.STRING, allowNull: true },
+stripeSessionId: { type: DataTypes.STRING, allowNull: true },
 }, {
     tableName: 'orders',
     timestamps: true
 });
+
 
 module.exports = Order;

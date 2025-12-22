@@ -6,43 +6,48 @@ const Product = require('../models/mysql/Product');
 
 
 exports.checkout = async (req, res) => {
-    const userId = req.user.id;
+  const userId = req.user.id;
 
+  try {
+    const cart = await Cart.findOne({
+      where: { userId },
+      include: [{ model: CartItem, include: [Product] }]
+    });
 
-    try {
-        const cart = await Cart.findOne({
-            where: { userId },
-            include: [{ model: CartItem, include: [Product] }]
-        });
+    if (!cart || cart.CartItems.length === 0)
+      return res.status(400).json({ message: "Cart is empty" });
 
-        if (!cart || cart.CartItems.length === 0)
-            return res.status(400).json({ message: "Cart is empty" });
+    let total = 0;
+    cart.CartItems.forEach(i => {
+      total += i.quantity * i.Product.price;
+    });
 
-        let total = 0;
+    const order = await Order.create({
+      userId,
+      total,
+      status: "pending_payment",
+      paymentMethod: "hand",
+      shippingAddress: req.body.address,
+    });
 
-        cart.CartItems.forEach(i => {
-            total += i.quantity * i.Product.price;
-        });
-
-        const order = await Order.create({ userId, total });
-
-        for (const item of cart.CartItems) {
-            await OrderItem.create({
-                orderId: order.id,
-                productId: item.productId,
-                quantity: item.quantity,
-                price: item.Product.price
-            });
-        }
-
-        await CartItem.destroy({ where: { cartId: cart.id } });
-
-        res.status(201).json({ message: "Order created", orderId: order.id });
-
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    for (const item of cart.CartItems) {
+      await OrderItem.create({
+        orderId: order.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.Product.price,
+      });
     }
+
+    await CartItem.destroy({ where: { cartId: cart.id } });
+
+    res.status(201).json({ message: "Order created", orderId: order.id });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
+
 
 exports.getAllOrders = async (req, res) => {
     try {

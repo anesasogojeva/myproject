@@ -5,6 +5,9 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Allowed roles that admin can choose
+  const allowedRoles = ["user", "admin", "dietitian"];
+
   // Add / edit form state
   const [form, setForm] = useState({ name: "", email: "", role: "user", password: "" });
   const [editingUser, setEditingUser] = useState(null);
@@ -51,7 +54,7 @@ export default function Users() {
       .catch((err) => console.error(err));
   };
 
-  // Update user (password not required)
+  // Update user
   const handleUpdate = (e) => {
     e.preventDefault();
     axios
@@ -133,8 +136,11 @@ export default function Users() {
           className="w-full border p-3 rounded-lg"
           required
         >
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
+          {allowedRoles.map((r) => (
+            <option key={r} value={r}>
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </option>
+          ))}
         </select>
 
         <button className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-500 transition">
@@ -177,8 +183,12 @@ export default function Users() {
             className="w-full border p-3 rounded-lg"
             required
           >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
+            <option value="">Select role</option>
+            {allowedRoles.map((r) => (
+              <option key={r} value={r}>
+                {r.charAt(0).toUpperCase() + r.slice(1)}
+              </option>
+            ))}
           </select>
 
           <div className="flex gap-3">

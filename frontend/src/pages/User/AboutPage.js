@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-
 export default function AboutPage() {
   const floatingIcons = [
     { emoji: "🍓", top: "5%", left: "5%", size: 35 },

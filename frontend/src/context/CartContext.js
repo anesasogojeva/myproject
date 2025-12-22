@@ -59,7 +59,7 @@ export function CartProvider({ children }) {
     setCart(prev => prev.filter(i => i.id !== cartItemId));
   };
 
-  // Update quantity (fixed)
+  // Update quantity
   const updateQuantity = async (cartItemId, newQty) => {
     if (!token) return;
     if (newQty < 1) return removeFromCart(cartItemId);
@@ -87,8 +87,19 @@ export function CartProvider({ children }) {
     );
   };
 
+  // CLEAR CART (for after checkout)
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity }}>
+    <CartContext.Provider value={{
+      cart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,  // <-- expose it
+    }}>
       {children}
     </CartContext.Provider>
   );
