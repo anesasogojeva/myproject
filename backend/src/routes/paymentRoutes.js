@@ -4,16 +4,12 @@ const auth = require("../middleware/authMiddleware");
 
 const {
   createCheckoutSession,
-  handleStripeWebhook
 } = require("../controllers/paymentController");
 
 router.post("/create-checkout-session", auth, createCheckoutSession);
 
-// Webhook MUST use raw body
-router.post(
-  "/stripe",
-  express.raw({ type: "application/json" }),
-  handleStripeWebhook
-);
+// Note: POST /api/payment/stripe (the webhook) is registered directly in
+// app.js, before the global express.json() middleware, since it needs the
+// raw request body to verify Stripe's signature.
 
 module.exports = router;

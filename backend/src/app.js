@@ -13,7 +13,15 @@ app.use(
   })
 );
 
-
+// Stripe webhook needs the raw, unparsed request body to verify its
+// signature - it must be registered before the global express.json()
+// below, or that middleware consumes the body first and signature
+// verification always fails.
+app.post(
+  "/api/payment/stripe",
+  express.raw({ type: "application/json" }),
+  require("./controllers/paymentController").handleStripeWebhook
+);
 
 // Middleware
 app.use(express.json()); //allows your API to read JSON bodies
