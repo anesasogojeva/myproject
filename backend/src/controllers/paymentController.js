@@ -1,5 +1,11 @@
 const Stripe = require("stripe");
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("Stripe is not configured. Set STRIPE_SECRET_KEY in backend/.env");
+  }
+  return Stripe(process.env.STRIPE_SECRET_KEY);
+}
 
 const Order = require("../models/mysql/Order");
 const OrderItem = require("../models/mysql/OrderItem");
@@ -38,6 +44,8 @@ exports.createCheckoutSession = async (req, res) => {
       },
       quantity: ci.quantity,
     }));
+
+    const stripe = getStripe();
 
     // Create Stripe session
     const session = await stripe.checkout.sessions.create({
@@ -85,6 +93,7 @@ exports.handleStripeWebhook = async (req, res) => {
   let event;
 
   try {
+    const stripe = getStripe();
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,

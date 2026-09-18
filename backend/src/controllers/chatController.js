@@ -39,10 +39,17 @@ exports.getChatInbox = async (req, res) => {
       // Get user info
       const user = await User.findByPk(userId);
 
+      // Skip conversations whose user account no longer exists
+      if (!user) continue;
+
+      // The inbox is a list of clients messaging the dietitian - a
+      // dietitian/admin account has no business appearing as its own client
+      if (user.role?.toLowerCase() !== "user") continue;
+
       result.push({
         userId,
-        name: user?.name || "Unknown User",
-        email: user?.email,
+        name: user.name,
+        email: user.email,
         lastMessage: lastMessage ? lastMessage.message : "",
         lastMessageTime: lastMessage ? lastMessage.createdAt : null,
         unreadCount,

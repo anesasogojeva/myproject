@@ -33,7 +33,7 @@ try{
     
     const exist = await User.findOne({where: {email}});
     if(exist) return res.status(400).json({message:"This email is already used"});
-    const hashed = await bcrypt.hash(password,10);a
+    const hashed = await bcrypt.hash(password, 10);
 
     const user = await User.create({
         name,
@@ -42,9 +42,10 @@ try{
         role: 'user'
     });
 
-    res.json({message: "Registered succesfully", user});
+    res.json({ message: "Registered successfully", user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 }catch(err){
-    res.status(500).json({error:err.message});
+    console.error("Register error:", err);
+    res.status(500).json({ message: err.message });
 }
 
 };

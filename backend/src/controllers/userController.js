@@ -1,4 +1,8 @@
 const User = require("../models/mysql/User");
+const ChatMessage = require("../models/mysql/ChatMessage");
+const { Note } = require("../models/mysql/Note");
+const Cart = require("../models/mysql/Cart");
+const CartItem = require("../models/mysql/CartItem");
 const bcrypt = require('bcryptjs');
 
 exports.getAllUsers = async (req, res) => {
@@ -46,6 +50,17 @@ exports.deleteUser = async (req, res) => {
         const user = await User.findByPk(req.params.id);
 
         if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Clean up records tied to this account so nothing orphaned lingers
+        // (e.g. showing up as "Unknown User" in the dietitian chat inbox).
+        await ChatMessage.destroy({ where: { userId: user.id } });
+        await Note.destroy({ where: { clientId: user.id } });
+
+        const cart = await Cart.findOne({ where: { userId: user.id } });
+        if (cart) {
+            await CartItem.destroy({ where: { cartId: cart.id } });
+            await cart.destroy();
+        }
 
         await user.destroy();
 
