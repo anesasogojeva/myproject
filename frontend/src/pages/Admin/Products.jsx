@@ -1,95 +1,79 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Plus, Pencil, Trash2, ShoppingBag, Search } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
+import Button from "../../components/UI/Button";
+import Card from "../../components/UI/Card";
+import Modal from "../../components/UI/Modal";
+import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import { Input, Textarea } from "../../components/UI/FormField";
+import { TableRowSkeleton } from "../../components/UI/Skeleton";
+import EmptyState from "../../components/UI/EmptyState";
+import ImageWithFallback from "../../components/UI/ImageWithFallback";
+import PaginationBar from "../../components/UI/PaginationBar";
+import usePagination from "../../hooks/usePagination";
+
+const emptyForm = { name: "", price: "", description: "", image: "", category: "" };
 
 export default function Products() {
+  const toast = useToast();
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState(emptyForm);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
 
-  const [form, setForm] = useState({
-    name: "",
-    price: "",
-    description: "",
-    image: "",
-    category: "",
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = category === "all" || p.category === category;
+    return matchesSearch && matchesCategory;
   });
 
-  // separate state for editing form
-  const [editingProduct, setEditingProduct] = useState(null);
+  const {
+    page,
+    setPage,
+    totalPages,
+    pageItems: pagedProducts,
+    itemsPerPage,
+    setItemsPerPage,
+    totalItems,
+  } = usePagination(filteredProducts, 10);
 
   const token = localStorage.getItem("accessToken");
 
   const fetchProducts = () => {
+    setLoading(true);
     axios
       .get("http://localhost:5000/api/products", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setProducts(res.data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const openAdd = () => {
+    setEditingProduct(null);
+    setForm(emptyForm);
+    setModalOpen(true);
   };
 
-  // ADD NEW PRODUCT
-  const handleAdd = (e) => {
-    e.preventDefault();
-    axios
-      .post("http://localhost:5000/api/products", form, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        fetchProducts();
-        setForm({
-          name: "",
-          price: "",
-          description: "",
-          image: "",
-          category: "",
-        });
-      })
-      .catch((err) => console.error(err));
-  };
-
-  // UPDATE PRODUCT
-  const handleUpdate = (e) => {
-    e.preventDefault();
-
-    axios
-      .put(`http://localhost:5000/api/products/${editingProduct.id}`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        fetchProducts();
-        setEditingProduct(null);
-        setForm({
-          name: "",
-          price: "",
-          description: "",
-          image: "",
-          category: "",
-        });
-      })
-      .catch((err) => console.error(err));
-  };
-
-  const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-
-    axios
-      .delete(`http://localhost:5000/api/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => fetchProducts())
-      .catch((err) => console.error(err));
-  };
-
-  const startEdit = (product) => {
+  const openEdit = (product) => {
     setEditingProduct(product);
-
     setForm({
       name: product.name,
       price: product.price,
@@ -97,186 +81,200 @@ export default function Products() {
       image: product.image,
       category: product.category,
     });
+    setModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingProduct) {
+        await axios.put(`http://localhost:5000/api/products/${editingProduct.id}`, form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Product updated successfully");
+      } else {
+        await axios.post("http://localhost:5000/api/products", form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Product added successfully");
+      }
+      fetchProducts();
+      setModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong while saving the product.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await axios.delete(`http://localhost:5000/api/products/${deleteTarget.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Product deleted");
+      fetchProducts();
+    } catch (err) {
+      toast.error("Failed to delete product.");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
-    <div className="space-y-10">
-      <h2 className="text-3xl font-bold mb-2">Products Management</h2>
-      <p className="text-gray-600 mb-6">Add, edit or remove store products.</p>
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-stone-900">Products</h1>
+          <p className="text-stone-500 mt-1.5">Add, edit or remove store products.</p>
+        </div>
+        <Button icon={Plus} onClick={openAdd}>Add Product</Button>
+      </div>
 
-      {/* ADD PRODUCT FORM */}
-      <form
-        onSubmit={handleAdd}
-        className="bg-white p-6 rounded-2xl shadow-lg border max-w-lg space-y-4"
-      >
-        <h3 className="text-xl font-semibold">Add New Product</h3>
-
-        <input
-          type="text"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          placeholder="Product Name"
-          className="w-full border p-3 rounded-lg"
-        />
-
-        <input
-          type="number"
-          name="price"
-          value={form.price}
-          onChange={handleChange}
-          placeholder="Price"
-          className="w-full border p-3 rounded-lg"
-        />
-
-        <input
-          type="text"
-          name="category"
-          value={form.category}
-          onChange={handleChange}
-          placeholder="Category"
-          className="w-full border p-3 rounded-lg"
-        />
-
-        <input
-          type="text"
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          placeholder="Description"
-          className="w-full border p-3 rounded-lg"
-        />
-
-        <input
-          type="text"
-          name="image"
-          value={form.image}
-          onChange={handleChange}
-          placeholder="Image URL"
-          className="w-full border p-3 rounded-lg"
-        />
-
-        <button className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-500 transition">
-          Add Product
-        </button>
-      </form>
-
-      {/* SEPARATED EDIT FORM */}
-      {editingProduct && (
-        <form
-          onSubmit={handleUpdate}
-          className="bg-yellow-50 p-6 rounded-2xl shadow-lg border border-yellow-300 max-w-lg space-y-4"
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products..."
+            className="field-input pl-10"
+          />
+        </div>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="field-input sm:w-52"
         >
-          <h3 className="text-xl font-semibold text-yellow-700">
-            Editing: {editingProduct.name}
-          </h3>
+          <option value="all">All Categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
 
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-          />
+      <Card padding="p-0" className="overflow-hidden">
+        <div className="overflow-x-auto scroll-thin">
+          <table className="w-full text-sm min-w-[720px]">
+            <thead className="bg-stone-50 border-b border-stone-100">
+              <tr className="text-left text-stone-500">
+                <th className="p-4 font-medium">Product</th>
+                <th className="p-4 font-medium">Category</th>
+                <th className="p-4 font-medium">Price</th>
+                <th className="p-4 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => <TableRowSkeleton key={i} cols={4} />)
+              ) : products.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState
+                      icon={ShoppingBag}
+                      title="No products yet"
+                      description="Add your first product to start selling."
+                      action={<Button icon={Plus} onClick={openAdd}>Add Product</Button>}
+                    />
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState icon={Search} title="No matching products" description="Try a different search term or category." />
+                  </td>
+                </tr>
+              ) : (
+                pagedProducts.map((p) => (
+                  <tr key={p.id} className="hover:bg-stone-50/60 transition">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <ImageWithFallback
+                          src={p.image}
+                          alt={p.name}
+                          className="w-11 h-11 rounded-lg object-cover border border-stone-100 shrink-0"
+                          iconClassName="w-4 h-4"
+                        />
+                        <span className="font-medium text-stone-800">{p.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-stone-500">{p.category}</td>
+                    <td className="p-4 font-semibold text-stone-800">${p.price}</td>
+                    <td className="p-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-emerald-700 transition"
+                          aria-label="Edit product"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(p)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-rose-50 hover:text-rose-600 transition"
+                          aria-label="Delete product"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
-          <input
-            type="number"
-            name="price"
-            value={form.price}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-          />
-
-          <input
-            type="text"
-            name="category"
-            value={form.category}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-          />
-
-          <input
-            type="text"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-          />
-
-          <input
-            type="text"
-            name="image"
-            value={form.image}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-          />
-
-          <div className="flex gap-3">
-            <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-500 transition">
-              Save Changes
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setEditingProduct(null)}
-              className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+      {!loading && (
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          setPage={setPage}
+          itemsPerPage={itemsPerPage}
+          setItemsPerPage={setItemsPerPage}
+          totalItems={totalItems}
+        />
       )}
 
-      {/* TABLE */}
-      <div className="bg-white rounded-2xl shadow-lg border overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr className="text-left text-gray-700">
-              <th className="p-3">ID</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Category</th>
-              <th className="p-3">Price</th>
-              <th className="p-3">Description</th>
-              <th className="p-3">Image</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingProduct ? "Edit Product" : "Add New Product"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input label="Product Name" name="name" value={form.name} onChange={handleChange} required />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Price" name="price" type="number" step="0.01" value={form.price} onChange={handleChange} required />
+            <Input label="Category" name="category" value={form.category} onChange={handleChange} required />
+          </div>
+          <Textarea label="Description" name="description" value={form.description} onChange={handleChange} rows={3} />
+          <Input label="Image URL" name="image" value={form.image} onChange={handleChange} />
 
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">{p.id}</td>
-                <td className="p-3">{p.name}</td>
-                <td className="p-3">{p.category}</td>
-                <td className="p-3">${p.price}</td>
-                <td className="p-3">{p.description}</td>
-                <td className="p-3">
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                </td>
-                <td className="p-3 flex gap-3">
-                  <button
-                    onClick={() => startEdit(p)}
-                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-                  >
-                    Edit
-                  </button>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" fullWidth onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" fullWidth loading={saving}>
+              {editingProduct ? "Save Changes" : "Add Product"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
-                  <button
-                    onClick={() => handleDelete(p.id)}
-                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete this product?"
+        description={`"${deleteTarget?.name}" will be permanently removed from the store.`}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

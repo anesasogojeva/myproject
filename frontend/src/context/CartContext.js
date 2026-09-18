@@ -1,11 +1,13 @@
 // CartContext.js
 import { createContext, useContext, useState, useEffect } from "react";
+import { useToast } from "./ToastContext";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
   const token = localStorage.getItem("accessToken");
+  const toast = useToast();
 
   // Load cart from backend
   useEffect(() => {
@@ -21,20 +23,20 @@ export function CartProvider({ children }) {
   // Add product
   const addToCart = async (product, qty = 1) => {
     if (!token) {
-      alert("Please login to add items to cart");
+      toast.error("Please login to add items to cart");
       return;
     }
 
     const res = await fetch("http://localhost:5000/api/cart/add", {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ productId: product.id, quantity: qty }),
     });
 
-    if (!res.ok) return alert("Failed to add to cart");
+    if (!res.ok) return toast.error("Failed to add to cart");
 
     const item = await res.json();
 
@@ -47,6 +49,8 @@ export function CartProvider({ children }) {
       }
       return [...prev, { ...item, Product: product }];
     });
+
+    toast.success(`${product.name} added to cart`);
   };
 
   // Remove product
@@ -76,7 +80,7 @@ export function CartProvider({ children }) {
       body: JSON.stringify({ quantity: newQty }),
     });
 
-    if (!res.ok) return alert("Failed to update quantity");
+    if (!res.ok) return toast.error("Failed to update quantity");
 
     const updatedItem = await res.json();
 

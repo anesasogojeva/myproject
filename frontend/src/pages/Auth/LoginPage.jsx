@@ -1,16 +1,23 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { LogIn } from "lucide-react";
+import AuthLayout from "../../components/Layout/AuthLayout";
+import { Input } from "../../components/UI/FormField";
+import Button from "../../components/UI/Button";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const loginUser = async () => {
+  const loginUser = async (e) => {
+    e.preventDefault();
+    setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
@@ -29,56 +36,62 @@ export default function LoginPage() {
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      navigate("/"); // go home
+      navigate("/");
     } catch (err) {
       setMessage("Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-        <h2 className="text-3xl font-bold text-center mb-6">Login</h2>
-
+    <AuthLayout title="Welcome back" subtitle="Log in to continue your nutrition journey">
+      <form onSubmit={loginUser} className="space-y-4">
         {message && (
-          <p className="text-center mb-4 text-sm text-red-500">{message}</p>
+          <div className="text-sm text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-4 py-2.5">
+            {message}
+          </div>
         )}
 
-        <input
+        <Input
+          id="email"
           name="email"
+          type="email"
+          label="Email"
+          value={form.email}
           onChange={handleChange}
-          placeholder="Email"
-          className="w-full mb-3 px-4 py-2 border rounded-lg"
+          placeholder="you@example.com"
+          required
         />
 
-        <input
+        <Input
+          id="password"
           type="password"
           name="password"
+          label="Password"
+          value={form.password}
           onChange={handleChange}
-          placeholder="Password"
-          className="w-full mb-4 px-4 py-2 border rounded-lg"
+          placeholder="••••••••"
+          required
         />
 
-        <button
-          onClick={loginUser}
-          className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
-        >
-          Login
-        </button>
+        <div className="text-right -mt-2">
+          <Link to="/forgot-password" className="text-sm font-medium text-emerald-700 hover:text-emerald-800">
+            Forgot password?
+          </Link>
+        </div>
 
-        <p className="mt-4 text-center text-sm">
-          <a href="/forgot-password" className="text-blue-600 underline">
-            Forgot Password?
-          </a>
-        </p>
+        <Button type="submit" fullWidth size="lg" icon={LogIn} loading={loading}>
+          Log In
+        </Button>
 
-        <p className="mt-4 text-center text-sm">
+        <p className="text-center text-sm text-stone-500">
           Don't have an account?{" "}
-          <a href="/register" className="text-blue-600 underline">
-            Register
-          </a>
+          <Link to="/register" className="text-emerald-700 font-semibold hover:text-emerald-800">
+            Sign up
+          </Link>
         </p>
-      </div>
-    </div>
+      </form>
+    </AuthLayout>
   );
 }

@@ -2,50 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream-50 text-stone-700 font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-stone-900;
+  }
+
+  ::selection {
+    @apply bg-emerald-200 text-emerald-900;
+  }
+
+  /* Slim, calm scrollbar for chat panels / tables */
+  .scroll-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(41, 79, 60, 0.25);
+    border-radius: 9999px;
+  }
+  .scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* ---- Buttons ---- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 whitespace-nowrap;
+  }
+  .btn-md { @apply h-11 px-5; }
+  .btn-sm { @apply h-9 px-4 text-sm; }
+  .btn-lg { @apply h-12 px-7 text-base; }
+
+  .btn-primary {
+    @apply btn bg-emerald-700 text-white shadow-soft hover:bg-emerald-800 focus-visible:ring-emerald-600;
+  }
+  .btn-secondary {
+    @apply btn bg-stone-900 text-white hover:bg-stone-800 focus-visible:ring-stone-700;
+  }
+  .btn-outline {
+    @apply btn bg-white text-stone-700 border border-stone-300 hover:border-emerald-600 hover:text-emerald-700 focus-visible:ring-emerald-600;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-stone-600 hover:bg-stone-100 focus-visible:ring-stone-300;
+  }
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500;
+  }
+
+  /* ---- Cards ---- */
+  .card {
+    @apply bg-white rounded-2xl border border-stone-200/80 shadow-soft;
+  }
+
+  /* ---- Inputs ---- */
+  .field-label {
+    @apply block text-sm font-medium text-stone-700 mb-1.5;
+  }
+  .field-input {
+    @apply w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-stone-800
+           placeholder:text-stone-400 shadow-sm transition
+           focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-600
+           disabled:bg-stone-100 disabled:text-stone-400;
+  }
+  .field-error {
+    @apply mt-1.5 text-xs font-medium text-rose-600;
+  }
+  .field-hint {
+    @apply mt-1.5 text-xs text-stone-500;
+  }
+
+  /* ---- Badges ---- */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap;
+  }
+
+  /* ---- Section container ---- */
+  .container-app {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fadeIn {
-  animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.35s ease-out;
 }
 
-@keyframes bounceSlow {
-  0% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0); }
-}
-
-.animate-bounceSlow {
-  animation: bounceSlow 2s ease-in-out infinite;
-}
-
-@keyframes starFloat {
-  0% { transform: translateY(0); opacity: 1; }
-  50% { transform: translateY(-10px); opacity: 0.6; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-.animate-starFloat {
-  animation: starFloat 3s infinite ease-in-out;
-}
-
-@keyframes starFloat2 {
-  0% { transform: translateY(0); opacity: 0.7; }
-  50% { transform: translateY(8px); opacity: 0.4; }
-  100% { transform: translateY(0); opacity: 0.7; }
-}
-
-.animate-starFloat2 {
-  animation: starFloat2 4s infinite ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+.animate-fadeInScale {
+  animation: fadeInScale 0.25s ease-out;
+}
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #ECE7DC 0px, #F5F1E8 40px, #ECE7DC 80px);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-toastIn {
+  animation: toastIn 0.25s ease-out;
 }

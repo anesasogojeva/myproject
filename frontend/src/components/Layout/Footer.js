@@ -1,60 +1,69 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { Leaf, Mail, Phone, MapPin, Instagram, Facebook, Twitter } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="relative bg-white/60 border-t border-pink-100 backdrop-blur-xl mt-20 py-14 px-10">
-
-      {/* Soft pastel blobs */}
-      <div className="absolute w-[400px] h-[400px] bg-pink-200/40 blur-[160px] -top-20 left-0"></div>
-      <div className="absolute w-[350px] h-[350px] bg-yellow-200/40 blur-[160px] bottom-0 right-0"></div>
-
-      <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-4 gap-10">
-
-        {/* Brand */}
+    <footer className="bg-stone-900 text-stone-300 mt-24">
+      <div className="container-app py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
         <div>
-          <h1 className="text-3xl font-extrabold text-pink-500 mb-4">FitLife</h1>
-          <p className="text-gray-600">
-            Healthy snacks, cute wellness essentials, and everything for your glow-up journey ✨
+          <Link to="/home" className="flex items-center gap-2 mb-4">
+            <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+              <Leaf className="w-4 h-4" />
+            </span>
+            <span className="text-lg font-display font-bold text-white">FitLife</span>
+          </Link>
+          <p className="text-sm text-stone-400 leading-relaxed">
+            Personalized nutrition guidance, healthy food essentials, and a professional
+            dietitian team — all in one place.
           </p>
         </div>
 
-        {/* Shop Links */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Shop</h3>
-          <ul className="space-y-2 text-gray-600">
-            <li className="hover:text-pink-500 transition cursor-pointer">All Products</li>
-            <li className="hover:text-pink-500 transition cursor-pointer">Healthy Snacks</li>
-            <li className="hover:text-pink-500 transition cursor-pointer">Supplements</li>
-            <li className="hover:text-pink-500 transition cursor-pointer">Fitness Gear</li>
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wide mb-4">Shop</h3>
+          <ul className="space-y-2.5 text-sm">
+            <li><Link to="/products" className="hover:text-emerald-400 transition">All Products</Link></li>
+            <li><Link to="/ai-planner" className="hover:text-emerald-400 transition">AI Nutrition Planner</Link></li>
+            <li><Link to="/about" className="hover:text-emerald-400 transition">About Us</Link></li>
+            <li><Link to="/cart" className="hover:text-emerald-400 transition">Your Cart</Link></li>
           </ul>
         </div>
 
-        {/* Support */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Support</h3>
-          <ul className="space-y-2 text-gray-600">
-            <li className="hover:text-pink-500 transition cursor-pointer">Contact Us</li>
-            <li className="hover:text-pink-500 transition cursor-pointer">Shipping Info</li>
-            <li className="hover:text-pink-500 transition cursor-pointer">Returns</li>
-            <li className="hover:text-pink-500 transition cursor-pointer">FAQ</li>
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wide mb-4">Support</h3>
+          <ul className="space-y-2.5 text-sm">
+            <li><Link to="/about" className="hover:text-emerald-400 transition">Contact Us</Link></li>
+            <li><Link to="/login" className="hover:text-emerald-400 transition">Sign In</Link></li>
+            <li><Link to="/register" className="hover:text-emerald-400 transition">Create Account</Link></li>
           </ul>
         </div>
 
-        {/* Socials */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Connect</h3>
-          <div className="flex gap-5 text-2xl text-pink-500">
-            <a className="hover:scale-110 transition cursor-pointer">🌸</a>
-            <a className="hover:scale-110 transition cursor-pointer">💖</a>
-            <a className="hover:scale-110 transition cursor-pointer">🍓</a>
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wide mb-4">Get in touch</h3>
+          <ul className="space-y-3 text-sm text-stone-400">
+            <li className="flex items-center gap-2.5"><Mail className="w-4 h-4 text-emerald-500 shrink-0" /> support@fitlife.com</li>
+            <li className="flex items-center gap-2.5"><Phone className="w-4 h-4 text-emerald-500 shrink-0" /> +1 (555) 123-4567</li>
+            <li className="flex items-center gap-2.5"><MapPin className="w-4 h-4 text-emerald-500 shrink-0" /> 123 Wellness St, Healthy City</li>
+          </ul>
+          <div className="flex gap-3 mt-5">
+            {[Instagram, Facebook, Twitter].map((Icon, i) => (
+              <button
+                key={i}
+                type="button"
+                className="w-9 h-9 rounded-full bg-stone-800 flex items-center justify-center hover:bg-emerald-700 transition"
+              >
+                <Icon className="w-4 h-4 text-white" />
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Bottom Text */}
-      <p className="text-center text-gray-500 mt-12 text-sm">
-        © 2025 FitLife — Eat Cute. Live Fit. 💛
-      </p>
+      <div className="border-t border-stone-800">
+        <p className="container-app py-6 text-center text-xs text-stone-500">
+          © {new Date().getFullYear()} FitLife. All rights reserved.
+        </p>
+      </div>
     </footer>
   );
 }

@@ -1,249 +1,249 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Plus, Pencil, Trash2, Users as UsersIcon, Search } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
+import Button from "../../components/UI/Button";
+import Card from "../../components/UI/Card";
+import Modal from "../../components/UI/Modal";
+import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import Badge from "../../components/UI/Badge";
+import { Input, Select } from "../../components/UI/FormField";
+import { TableRowSkeleton } from "../../components/UI/Skeleton";
+import EmptyState from "../../components/UI/EmptyState";
+import PaginationBar from "../../components/UI/PaginationBar";
+import usePagination from "../../hooks/usePagination";
+
+const allowedRoles = ["user", "admin", "dietitian"];
+const emptyForm = { name: "", email: "", role: "user", password: "" };
+
+const roleBadge = (role) => {
+  if (role === "admin") return "danger";
+  if (role === "dietitian") return "info";
+  return "neutral";
+};
 
 export default function Users() {
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Allowed roles that admin can choose
-  const allowedRoles = ["user", "admin", "dietitian"];
-
-  // Add / edit form state
-  const [form, setForm] = useState({ name: "", email: "", role: "user", password: "" });
+  const [form, setForm] = useState(emptyForm);
   const [editingUser, setEditingUser] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredUsers = users.filter((u) =>
+    `${u.name || ""} ${u.email || ""}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const {
+    page,
+    setPage,
+    totalPages,
+    pageItems: pagedUsers,
+    itemsPerPage,
+    setItemsPerPage,
+    totalItems,
+  } = usePagination(filteredUsers, 10);
 
   const token = localStorage.getItem("accessToken");
 
-  // Fetch all users
   const fetchUsers = () => {
     setLoading(true);
     axios
       .get("http://localhost:5000/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => {
-        setUsers(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+      .then((res) => setUsers(res.data))
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const openAdd = () => {
+    setEditingUser(null);
+    setForm(emptyForm);
+    setModalOpen(true);
   };
 
-  // Add new user
-  const handleAdd = (e) => {
-    e.preventDefault();
-
-    axios
-      .post("http://localhost:5000/api/users/create-user", form, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        fetchUsers();
-        setForm({ name: "", email: "", role: "user", password: "" });
-      })
-      .catch((err) => console.error(err));
-  };
-
-  // Update user
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    axios
-      .put(`http://localhost:5000/api/users/${editingUser.id}`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        fetchUsers();
-        setEditingUser(null);
-        setForm({ name: "", email: "", role: "user", password: "" });
-      })
-      .catch((err) => console.error(err));
-  };
-
-  const handleDelete = (userId) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-
-    axios
-      .delete(`http://localhost:5000/api/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => fetchUsers())
-      .catch((err) => console.error(err));
-  };
-
-  const startEdit = (user) => {
+  const openEdit = (user) => {
     setEditingUser(user);
     setForm({ name: user.name, email: user.email, role: user.role, password: "" });
+    setModalOpen(true);
   };
 
-  if (loading) return <div className="text-center py-20">Loading users...</div>;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingUser) {
+        await axios.put(`http://localhost:5000/api/users/${editingUser.id}`, form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("User updated successfully");
+      } else {
+        await axios.post("http://localhost:5000/api/users/create-user", form, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("User created successfully");
+      }
+      fetchUsers();
+      setModalOpen(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong while saving the user.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${deleteTarget.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("User deleted");
+      fetchUsers();
+    } catch (err) {
+      toast.error("Failed to delete user.");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
 
   return (
-    <div className="space-y-10">
-      <h2 className="text-3xl font-bold">Users Management</h2>
-      <p className="text-gray-600">Add, edit, or remove users.</p>
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-stone-900">Users</h1>
+          <p className="text-stone-500 mt-1.5">Add, edit, or remove platform users.</p>
+        </div>
+        <Button icon={Plus} onClick={openAdd}>Add User</Button>
+      </div>
 
-      {/* ADD USER FORM */}
-      <form
-        onSubmit={handleAdd}
-        className="bg-white p-6 rounded-2xl shadow-lg border max-w-lg space-y-4"
-      >
-        <h3 className="text-xl font-semibold">Add New User</h3>
-
+      <div className="relative mb-5 max-w-sm">
+        <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
-          type="text"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          placeholder="Name"
-          className="w-full border p-3 rounded-lg"
-          required
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name or email..."
+          className="field-input pl-10"
         />
+      </div>
 
-        <input
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Email"
-          className="w-full border p-3 rounded-lg"
-          required
+      <Card padding="p-0" className="overflow-hidden">
+        <div className="overflow-x-auto scroll-thin">
+          <table className="w-full text-sm min-w-[600px]">
+            <thead className="bg-stone-50 border-b border-stone-100">
+              <tr className="text-left text-stone-500">
+                <th className="p-4 font-medium">Name</th>
+                <th className="p-4 font-medium">Email</th>
+                <th className="p-4 font-medium">Role</th>
+                <th className="p-4 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-100">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => <TableRowSkeleton key={i} cols={4} />)
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState icon={UsersIcon} title="No users yet" description="Add your first platform user." />
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState icon={Search} title="No matching users" description="Try a different name or email." />
+                  </td>
+                </tr>
+              ) : (
+                pagedUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-stone-50/60 transition">
+                    <td className="p-4 font-medium text-stone-800">{user.name}</td>
+                    <td className="p-4 text-stone-500">{user.email}</td>
+                    <td className="p-4">
+                      <Badge variant={roleBadge(user.role)} className="capitalize">{user.role}</Badge>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => openEdit(user)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 hover:text-emerald-700 transition"
+                          aria-label="Edit user"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(user)}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-rose-50 hover:text-rose-600 transition"
+                          aria-label="Delete user"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {!loading && (
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          setPage={setPage}
+          itemsPerPage={itemsPerPage}
+          setItemsPerPage={setItemsPerPage}
+          totalItems={totalItems}
         />
-
-        <input
-          type="password"
-          name="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Password"
-          className="w-full border p-3 rounded-lg"
-          required
-        />
-
-        <select
-          name="role"
-          value={form.role}
-          onChange={handleChange}
-          className="w-full border p-3 rounded-lg"
-          required
-        >
-          {allowedRoles.map((r) => (
-            <option key={r} value={r}>
-              {r.charAt(0).toUpperCase() + r.slice(1)}
-            </option>
-          ))}
-        </select>
-
-        <button className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-500 transition">
-          Add User
-        </button>
-      </form>
-
-      {/* EDIT USER FORM */}
-      {editingUser && (
-        <form
-          onSubmit={handleUpdate}
-          className="bg-yellow-50 p-6 rounded-2xl shadow-lg border border-yellow-300 max-w-lg space-y-4"
-        >
-          <h3 className="text-xl font-semibold text-yellow-700">
-            Editing: {editingUser.name}
-          </h3>
-
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-            required
-          />
-
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-            required
-          />
-
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="w-full border p-3 rounded-lg"
-            required
-          >
-            <option value="">Select role</option>
-            {allowedRoles.map((r) => (
-              <option key={r} value={r}>
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex gap-3">
-            <button className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-500 transition">
-              Save Changes
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditingUser(null)}
-              className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
       )}
 
-      {/* USERS TABLE */}
-      <div className="bg-white rounded-2xl shadow-lg border overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr className="text-left text-gray-700">
-              <th className="p-3">User ID</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Role</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">{user.id}</td>
-                <td className="p-3">{user.name}</td>
-                <td className="p-3">{user.email}</td>
-                <td className="p-3">{user.role}</td>
-                <td className="p-3 flex gap-2">
-                  <button
-                    onClick={() => startEdit(user)}
-                    className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(user.id)}
-                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingUser ? "Edit User" : "Add New User"}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input label="Name" name="name" value={form.name} onChange={handleChange} required />
+          <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
+          {!editingUser && (
+            <Input label="Password" name="password" type="password" value={form.password} onChange={handleChange} required />
+          )}
+          <Select label="Role" name="role" value={form.role} onChange={handleChange} required>
+            {allowedRoles.map((r) => (
+              <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </Select>
+
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="outline" fullWidth onClick={() => setModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" fullWidth loading={saving}>
+              {editingUser ? "Save Changes" : "Add User"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete this user?"
+        description={`"${deleteTarget?.name}" will be permanently removed.`}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

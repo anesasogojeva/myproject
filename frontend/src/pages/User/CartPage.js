@@ -1,6 +1,10 @@
 import React from "react";
 import { useCart } from "../../context/CartContext";
-import { Link } from "react-router-dom";
+import { ShoppingBag, Trash2, ArrowRight } from "lucide-react";
+import Card from "../../components/UI/Card";
+import Button from "../../components/UI/Button";
+import EmptyState from "../../components/UI/EmptyState";
+import ImageWithFallback from "../../components/UI/ImageWithFallback";
 
 export default function CartPage() {
   const { cart, removeFromCart } = useCart();
@@ -8,65 +12,61 @@ export default function CartPage() {
   const total = cart.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <div className="min-h-screen bg-gray-100 pt-28 px-6">
-      <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
+    <div className="container-app py-10 sm:py-14">
+      <h1 className="text-3xl sm:text-4xl font-display font-bold text-stone-900 mb-8">Your Cart</h1>
 
-      {/* EMPTY STATE */}
-      {cart.length === 0 && (
-        <div className="text-center py-20 text-gray-500 text-lg">
-          Your cart is empty 🛒  
+      {cart.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={ShoppingBag}
+            title="Your cart is empty"
+            description="Looks like you haven't added any healthy products yet."
+            action={<Button to="/products">Browse Products</Button>}
+          />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="lg:col-span-2 space-y-4">
+            {cart.map((item) => (
+              <Card key={item.id} padding="p-4 sm:p-5" className="flex items-center gap-4">
+                <ImageWithFallback
+                  src={item.image}
+                  alt={item.name}
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border border-stone-100 shrink-0"
+                  iconClassName="w-7 h-7"
+                />
+
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-semibold text-stone-900 truncate">{item.name}</h2>
+                  {item.brand && <p className="text-sm text-stone-400">{item.brand}</p>}
+                  <p className="font-bold text-emerald-700 mt-1">${item.price.toFixed(2)}</p>
+                </div>
+
+                <button
+                  onClick={() => removeFromCart(item.id)}
+                  className="p-2 text-stone-300 hover:text-rose-500 transition shrink-0"
+                  aria-label="Remove item"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="lg:sticky lg:top-24">
+            <h2 className="text-lg font-display font-bold text-stone-900 mb-4">Order Summary</h2>
+
+            <div className="flex justify-between text-base text-stone-600 mb-6">
+              <span>Total</span>
+              <span className="text-xl font-bold text-stone-900">${total.toFixed(2)}</span>
+            </div>
+
+            <Button to="/checkout" fullWidth size="lg" iconRight={ArrowRight}>
+              Proceed to Checkout
+            </Button>
+          </Card>
         </div>
       )}
-
-      {/* LIST OF ITEMS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        {/* LEFT: ITEMS */}
-        <div className="lg:col-span-2 space-y-4">
-          {cart.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white p-5 rounded-2xl shadow-sm flex items-center gap-4"
-            >
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-24 h-24 object-contain rounded-xl"
-              />
-
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold">{item.name}</h2>
-                <p className="text-sm text-gray-500">{item.brand}</p>
-                <p className="font-bold mt-1">${item.price.toFixed(2)}</p>
-              </div>
-
-              {/* REMOVE */}
-              <button
-                onClick={() => removeFromCart(item.id)}
-                className="text-red-500 hover:text-red-600 font-semibold"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* RIGHT: ORDER SUMMARY */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm h-fit sticky top-24">
-          <h2 className="text-xl font-bold mb-4">Order Summary</h2>
-
-          <div className="flex justify-between text-lg font-medium">
-            <span>Total:</span>
-            <span>${total.toFixed(2)}</span>
-          </div>
-<Link to="/checkout">
-  <button className="w-full mt-6 bg-black text-white py-3 rounded-full font-semibold">
-    Proceed to Checkout
-  </button>
-</Link>
-        </div>
-
-      </div>
     </div>
   );
 }

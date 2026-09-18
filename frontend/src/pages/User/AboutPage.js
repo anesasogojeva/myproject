@@ -1,254 +1,204 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { ShieldCheck, Sparkles, Users, Star, Mail, Phone, MapPin } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
+import SectionHeading from "../../components/UI/SectionHeading";
+import Card from "../../components/UI/Card";
+import Button from "../../components/UI/Button";
+import { Input, Textarea } from "../../components/UI/FormField";
+
+const values = [
+  {
+    icon: ShieldCheck,
+    title: "High-Quality Products",
+    text: "Every product on our shelves is carefully vetted for quality, safety and nutritional value.",
+  },
+  {
+    icon: Sparkles,
+    title: "Personalized Guidance",
+    text: "Our AI planner and dietitians work together to match products and plans to your goals.",
+  },
+  {
+    icon: Users,
+    title: "Trusted by Our Community",
+    text: "Thousands of members rely on FitLife for their day-to-day nutrition and wellness needs.",
+  },
+];
+
+const testimonials = [
+  { name: "Sarah M.", text: "FitLife products have completely changed my daily nutrition. I feel more energetic and healthier!" },
+  { name: "James K.", text: "The AI recommendations are amazing. I got the right products and a meal plan tailored for me." },
+  { name: "Emily R.", text: "Great customer support and high-quality supplements. I love shopping here!" },
+];
+
 export default function AboutPage() {
-  const floatingIcons = [
-    { emoji: "🍓", top: "5%", left: "5%", size: 35 },
-    { emoji: "💪", top: "20%", left: "80%", size: 40 },
-    { emoji: "🥦", top: "60%", left: "10%", size: 30 },
-    { emoji: "🥑", top: "50%", left: "70%", size: 35 },
-  ];
+  const toast = useToast();
+  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [sending, setSending] = useState(false);
 
-  const testimonials = [
-    { name: "Sarah M.", text: "FitLife products have completely changed my daily nutrition. I feel more energetic and healthier!" },
-    { name: "James K.", text: "The AI recommendations are amazing. I got the right products and a meal plan tailored for me." },
-    { name: "Emily R.", text: "Great customer support and high-quality supplements. I love shopping here!" },
-  ];
-
-  // Form state
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [status, setStatus] = useState("");
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus("");
-
+    setSending(true);
     try {
       const res = await fetch("http://localhost:5000/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify(form),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setStatus("Message sent successfully! ✅");
-        setName("");
-        setEmail("");
-        setMessage("");
+        toast.success("Message sent successfully! We'll get back to you soon.");
+        setForm({ name: "", email: "", message: "" });
       } else {
-        setStatus(data.error || "Failed to send message ❌");
+        toast.error(data.error || "Failed to send message.");
       }
     } catch (err) {
-      console.error(err);
-      setStatus("Error sending message ❌");
+      toast.error("Something went wrong while sending your message.");
+    } finally {
+      setSending(false);
     }
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-yellow-50 overflow-x-hidden py-20 px-6 md:px-20">
-      
-      {/* Floating Icons */}
-      {floatingIcons.map((icon, index) => (
+    <div className="w-full bg-cream-50">
+      {/* INTRO */}
+      <section className="bg-emerald-50/60 py-20 sm:py-24">
         <motion.div
-          key={index}
-          className="absolute text-2xl md:text-3xl"
-          style={{ top: icon.top, left: icon.left, fontSize: icon.size }}
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 4 + index, repeat: Infinity, ease: "easeInOut" }}
+          className="container-app max-w-3xl text-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          {icon.emoji}
+          <span className="inline-block text-xs font-semibold tracking-wider uppercase text-emerald-700 bg-white px-3 py-1 rounded-full mb-5 shadow-soft">
+            About FitLife
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-display font-bold text-stone-900 leading-tight">
+            Nutrition guidance you can trust
+          </h1>
+          <p className="mt-6 text-lg text-stone-600 leading-relaxed">
+            FitLife is a nutrition and wellness platform combining certified dietitian
+            support, an intelligent planning assistant, and a curated healthy-food
+            marketplace — helping you build habits that actually last.
+          </p>
         </motion.div>
-      ))}
-
-      {/* ABOUT SECTION */}
-      <section className="max-w-5xl mx-auto text-center mb-20 relative z-10">
-        <motion.h1
-          className="text-5xl font-extrabold text-gray-800 mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          About FitLife
-        </motion.h1>
-        <motion.p
-          className="text-xl text-gray-700 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2 }}
-        >
-          FitLife is your go-to e-commerce platform for nutrition and healthy lifestyle products. 
-          Discover supplements, protein blends, wellness boosters, and lifestyle accessories that help 
-          you achieve your fitness goals and maintain a balanced, healthy lifestyle.
-        </motion.p>
-
-        <motion.p
-          className="text-xl text-gray-700 mt-6 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.4 }}
-        >
-          Our platform also includes expert guidance and AI-powered suggestions to help you pick 
-          the best products, meal plans, and fitness routines tailored to your needs.
-        </motion.p>
       </section>
 
       {/* WHY CHOOSE US */}
-      <section className="max-w-6xl mx-auto mb-20 relative z-10">
-        <motion.h2
-          className="text-4xl font-bold text-gray-800 mb-10 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Why Choose FitLife?
-        </motion.h2>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition text-center relative overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-          >
-            <div className="absolute top-2 left-2 text-xl animate-bounce opacity-50">💊</div>
-            <h3 className="font-bold text-xl mb-2">High-Quality Products</h3>
-            <p className="text-gray-700">All our supplements and products are carefully selected for quality and effectiveness.</p>
-          </motion.div>
-
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition text-center relative overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2 }}
-          >
-            <div className="absolute top-2 right-2 text-xl animate-bounce opacity-50">💪</div>
-            <h3 className="font-bold text-xl mb-2">Personalized Recommendations</h3>
-            <p className="text-gray-700">Our AI helps you find products and routines that match your goals, lifestyle, and budget.</p>
-          </motion.div>
-
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition text-center relative overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.4 }}
-          >
-            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xl animate-bounce opacity-50">🌿</div>
-            <h3 className="font-bold text-xl mb-2">Trusted by Customers</h3>
-            <p className="text-gray-700">Thousands of satisfied customers rely on FitLife for their nutrition and wellness journey.</p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CUSTOMER TESTIMONIALS */}
-      <section className="max-w-6xl mx-auto mb-20 relative z-10">
-        <motion.h2
-          className="text-4xl font-bold text-gray-800 mb-10 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          What Our Customers Say
-        </motion.h2>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t, i) => (
-            <motion.div
-              key={i}
-              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition text-center relative overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1 + i * 0.2 }}
-            >
-              <div className="absolute top-2 right-2 text-xl animate-bounce opacity-40">🌟</div>
-              <p className="text-gray-700 italic">"{t.text}"</p>
-              <h4 className="font-bold text-gray-800 mt-4">- {t.name}</h4>
-            </motion.div>
+      <section className="container-app py-20 sm:py-24">
+        <SectionHeading
+          eyebrow="Why FitLife"
+          title="What sets us apart"
+          subtitle="We combine human expertise with smart technology to support your health goals."
+        />
+        <div className="grid md:grid-cols-3 gap-6">
+          {values.map((v) => (
+            <Card key={v.title} hoverable className="text-center">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-5">
+                <v.icon className="w-6 h-6" />
+              </div>
+              <h3 className="font-display font-semibold text-lg text-stone-900 mb-2">{v.title}</h3>
+              <p className="text-stone-500 text-sm leading-relaxed">{v.text}</p>
+            </Card>
           ))}
         </div>
       </section>
 
-      {/* CONTACT SECTION */}
-      <section className="max-w-6xl mx-auto bg-white rounded-3xl shadow-lg p-10 relative z-10">
-        <motion.h2
-          className="text-4xl font-bold text-gray-800 mb-10 text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Contact Us
-        </motion.h2>
+      {/* TESTIMONIALS */}
+      <section className="bg-emerald-50/60 py-20 sm:py-24">
+        <div className="container-app">
+          <SectionHeading
+            eyebrow="Testimonials"
+            title="What our customers say"
+            subtitle="Real feedback from members of the FitLife community."
+          />
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t) => (
+              <Card key={t.name}>
+                <div className="flex gap-1 text-amber-400 mb-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-stone-600 italic leading-relaxed">"{t.text}"</p>
+                <h4 className="font-semibold text-stone-900 mt-4">{t.name}</h4>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        <div className="grid md:grid-cols-2 gap-10">
-          {/* Contact Info */}
-          <motion.div
-            className="flex flex-col justify-center space-y-6"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-          >
-            <div className="bg-yellow-100 rounded-2xl p-6 shadow-md hover:shadow-lg transition">
-              <h3 className="font-bold text-xl text-gray-800 mb-2">Email</h3>
-              <p className="text-gray-700">support@fitlife.com</p>
-            </div>
-            <div className="bg-pink-100 rounded-2xl p-6 shadow-md hover:shadow-lg transition">
-              <h3 className="font-bold text-xl text-gray-800 mb-2">Phone</h3>
-              <p className="text-gray-700">+1 (555) 123-4567</p>
-            </div>
-            <div className="bg-green-100 rounded-2xl p-6 shadow-md hover:shadow-lg transition">
-              <h3 className="font-bold text-xl text-gray-800 mb-2">Address</h3>
-              <p className="text-gray-700">123 Fitness Street, Healthy City, USA</p>
-            </div>
-          </motion.div>
+      {/* CONTACT */}
+      <section className="container-app py-20 sm:py-24">
+        <SectionHeading eyebrow="Contact" title="Get in touch" subtitle="Have a question? We'd love to hear from you." />
 
-          {/* Contact Form */}
-          <motion.div
-            className="bg-white rounded-2xl p-6 shadow-md"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1 }}
-          >
+        <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+          <div className="flex flex-col justify-center gap-5">
+            <Card className="flex items-center gap-4" padding="p-5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-stone-400">Email</p>
+                <p className="font-semibold text-stone-800">support@fitlife.com</p>
+              </div>
+            </Card>
+            <Card className="flex items-center gap-4" padding="p-5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-stone-400">Phone</p>
+                <p className="font-semibold text-stone-800">+1 (555) 123-4567</p>
+              </div>
+            </Card>
+            <Card className="flex items-center gap-4" padding="p-5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-stone-400">Address</p>
+                <p className="font-semibold text-stone-800">123 Fitness Street, Healthy City</p>
+              </div>
+            </Card>
+          </div>
+
+          <Card>
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                placeholder="Your Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+              <Input
+                name="name"
+                label="Your Name"
+                value={form.name}
+                onChange={handleChange}
+                placeholder="Jane Doe"
                 required
               />
-              <input
+              <Input
+                name="email"
                 type="email"
-                placeholder="Your Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                label="Your Email"
+                value={form.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
                 required
               />
-              <textarea
-                placeholder="Your Message"
-                rows={5}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400"
+              <Textarea
+                name="message"
+                label="Message"
+                value={form.message}
+                onChange={handleChange}
+                placeholder="How can we help?"
+                rows={4}
                 required
               />
-              <button
-                type="submit"
-                className="mt-2 w-full bg-pink-500 text-white py-3 rounded-2xl shadow-lg hover:bg-pink-400 transition"
-              >
+              <Button type="submit" fullWidth size="lg" loading={sending}>
                 Send Message
-              </button>
-              {status && (
-                <p
-                  className={`mt-2 text-center font-medium ${
-                    status.includes("success") ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {status}
-                </p>
-              )}
+              </Button>
             </form>
-          </motion.div>
+          </Card>
         </div>
       </section>
     </div>

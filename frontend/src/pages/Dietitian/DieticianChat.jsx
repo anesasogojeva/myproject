@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axios from "axios";
+import { Send, MessageCircle } from "lucide-react";
+import EmptyState from "../../components/UI/EmptyState";
 
 const socket = io("http://localhost:5000");
 
-export default function DieticianChat({ token, userId }) {
+export default function DieticianChat({ token: tokenProp, userId }) {
+  const token = tokenProp || localStorage.getItem("accessToken");
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [typingStatus, setTypingStatus] = useState("");
@@ -17,29 +20,20 @@ export default function DieticianChat({ token, userId }) {
   };
   useEffect(scrollToBottom, [messages]);
 
-  // LOAD MESSAGES
   useEffect(() => {
     if (!userId) return;
 
     socket.emit("join", { userId });
     loadMessages();
 
-    // Receive message
-    const receiveHandler = (msg) =>
-      setMessages((prev) => [...prev, msg]);
+    const receiveHandler = (msg) => setMessages((prev) => [...prev, msg]);
 
-    // Someone is typing
     const typingHandler = ({ role }) => {
-      if (role !== "dietician") {
-        setTypingStatus("User is typing...");
-      }
+      if (role !== "dietician") setTypingStatus("User is typing...");
     };
 
-    // Someone stopped typing
     const stopTypingHandler = ({ role }) => {
-      if (role !== "dietician") {
-        setTypingStatus("");
-      }
+      if (role !== "dietician") setTypingStatus("");
     };
 
     socket.on("receiveMessage", receiveHandler);
@@ -51,23 +45,27 @@ export default function DieticianChat({ token, userId }) {
       socket.off("userTyping", typingHandler);
       socket.off("userStopTyping", stopTypingHandler);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const loadMessages = async () => {
-    const res = await axios.get(`http://localhost:5000/api/chat/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const res = await axios.get(`http://localhost:5000/api/chat/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    setMessages(
-      res.data.map((m) => ({
-        role: m.senderRole,
-        text: m.message,
-        time: m.time,
-      }))
-    );
+      setMessages(
+        res.data.map((m) => ({
+          role: m.senderRole,
+          text: m.message,
+          time: m.time,
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+    }
   };
 
-  // --- SEND MESSAGE ---
   const sendMessage = () => {
     if (!input.trim()) return;
 
@@ -75,7 +73,7 @@ export default function DieticianChat({ token, userId }) {
       userId,
       role: "dietician",
       text: input,
-      time: new Date().toLocaleTimeString(),
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
     socket.emit("sendMessage", msg);
@@ -83,7 +81,6 @@ export default function DieticianChat({ token, userId }) {
     setInput("");
   };
 
-  // --- TYPING HANDLER ---
   const handleTyping = (e) => {
     setInput(e.target.value);
     socket.emit("typing", { userId, role: "dietician" });
@@ -95,102 +92,53 @@ export default function DieticianChat({ token, userId }) {
   };
 
   return (
-    <div style={styles.chatContainer}>
-      <div style={styles.messages}>
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            style={{
-              ...styles.message,
-              alignSelf:
-                m.role === "dietician" ? "flex-end" : "flex-start",
-              background:
-                m.role === "dietician" ? "#e1f5fe" : "#fff8e1",
-            }}
-          >
-            <div>{m.text}</div>
-            <small style={styles.time}>{m.time}</small>
-          </div>
-        ))}
+    <div className="flex-1 flex flex-col h-full min-w-0">
+      <div className="px-5 py-4 border-b border-stone-100 shrink-0">
+        <p className="font-semibold text-stone-900 text-sm">Client Conversation</p>
+        <p className="text-xs text-stone-400">{typingStatus || " "}</p>
+      </div>
 
+      <div className="flex-1 overflow-y-auto scroll-thin px-5 py-4 flex flex-col gap-3">
+        {messages.length === 0 ? (
+          <EmptyState icon={MessageCircle} title="No messages yet" description="Start the conversation with this client." />
+        ) : (
+          messages.map((m, i) => (
+            <div key={i} className={`flex ${m.role === "dietician" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  m.role === "dietician"
+                    ? "bg-emerald-700 text-white rounded-br-sm"
+                    : "bg-stone-100 text-stone-700 rounded-bl-sm"
+                }`}
+              >
+                <p>{m.text}</p>
+                <span className={`block text-[10px] mt-1 ${m.role === "dietician" ? "text-emerald-100" : "text-stone-400"}`}>
+                  {m.time}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {typingStatus && (
-        <div style={styles.typing}>{typingStatus}</div>
-      )}
-
-      <div style={styles.inputRow}>
+      <div className="p-4 border-t border-stone-100 flex items-center gap-2 shrink-0">
         <input
-          style={styles.input}
+          className="field-input flex-1"
           value={input}
           onChange={handleTyping}
           placeholder="Type a message…"
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-
-        <button style={styles.button} onClick={sendMessage}>
-          Send
+        <button
+          onClick={sendMessage}
+          disabled={!input.trim()}
+          className="w-11 h-11 rounded-xl bg-emerald-700 text-white flex items-center justify-center hover:bg-emerald-800 transition disabled:opacity-40 shrink-0"
+          aria-label="Send message"
+        >
+          <Send className="w-5 h-5" />
         </button>
       </div>
     </div>
   );
 }
-
-const styles = {
-  chatContainer: {
-    width: "100%",
-    border: "1px solid #ccc",
-    borderRadius: "10px",
-    padding: "10px",
-    background: "#fff",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-  },
-  messages: {
-    flex: 1,
-    overflowY: "scroll",
-    padding: "10px",
-    borderBottom: "1px solid #eee",
-    display: "flex",
-    flexDirection: "column",
-  },
-  message: {
-    padding: "10px",
-    marginBottom: "10px",
-    borderRadius: "10px",
-    maxWidth: "70%",
-    wordBreak: "break-word",
-  },
-  time: {
-    fontSize: "10px",
-    textAlign: "right",
-    color: "#888",
-    marginTop: "4px",
-  },
-  typing: {
-    padding: "5px 10px",
-    color: "#999",
-    fontStyle: "italic",
-  },
-  inputRow: {
-    display: "flex",
-    marginTop: "10px",
-  },
-  input: {
-    flex: 1,
-    padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  },
-  button: {
-    marginLeft: "10px",
-    padding: "10px 20px",
-    background: "#4CAF50",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-};

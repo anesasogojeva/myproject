@@ -1,43 +1,55 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
+import { KeyRound } from "lucide-react";
+import AuthLayout from "../../components/Layout/AuthLayout";
+import { Input } from "../../components/UI/FormField";
+import Button from "../../components/UI/Button";
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const resetPass = async () => {
-    const res = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
+  const resetPass = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
 
-    const data = await res.json();
-    setMsg(data.message);
+      const data = await res.json();
+      setMsg(data.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Set New Password</h2>
+    <AuthLayout title="Set a new password" subtitle="Choose a strong password for your account">
+      <form onSubmit={resetPass} className="space-y-4">
+        {msg && (
+          <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
+            {msg}
+          </div>
+        )}
 
-        {msg && <p className="text-center text-sm mb-4">{msg}</p>}
-
-        <input
+        <Input
+          label="New Password"
           type="password"
-          placeholder="New Password"
-          className="w-full px-4 py-2 border rounded-lg mb-4"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
         />
 
-        <button
-          onClick={resetPass}
-          className="w-full py-2 bg-black text-white rounded-lg"
-        >
+        <Button type="submit" fullWidth size="lg" icon={KeyRound} loading={loading}>
           Reset Password
-        </button>
-      </div>
-    </div>
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

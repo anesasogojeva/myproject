@@ -1,14 +1,22 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { UserPlus } from "lucide-react";
+import AuthLayout from "../../components/Layout/AuthLayout";
+import { Input } from "../../components/UI/FormField";
+import Button from "../../components/UI/Button";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const registerUser = async () => {
+  const registerUser = async (e) => {
+    e.preventDefault();
+    setLoading(true);
     try {
       const res = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
@@ -18,59 +26,79 @@ export default function RegisterPage() {
 
       const data = await res.json();
 
-      if (!res.ok) return setMessage(data.message || "Registration failed");
+      if (!res.ok) {
+        setMessage(data.message || data.error || "Registration failed");
+        return;
+      }
 
-      setMessage("🎉 Registered successfully! You can now login.");
+      setMessage("Registered successfully! You can now login.");
     } catch (err) {
       setMessage("Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-        <h2 className="text-3xl font-bold text-center mb-6">Create Account</h2>
+  const isSuccess = message.includes("successfully");
 
+  return (
+    <AuthLayout title="Create your account" subtitle="Start your personalized nutrition journey today">
+      <form onSubmit={registerUser} className="space-y-4">
         {message && (
-          <p className="text-center mb-4 text-sm text-red-500">{message}</p>
+          <div
+            className={`text-sm rounded-xl px-4 py-2.5 border ${
+              isSuccess
+                ? "text-emerald-700 bg-emerald-50 border-emerald-100"
+                : "text-rose-600 bg-rose-50 border-rose-100"
+            }`}
+          >
+            {message}
+          </div>
         )}
 
-        <input
+        <Input
+          id="name"
           name="name"
+          label="Full Name"
+          value={form.name}
           onChange={handleChange}
-          placeholder="Full Name"
-          className="w-full mb-3 px-4 py-2 border rounded-lg"
+          placeholder="Jane Doe"
+          required
         />
 
-        <input
+        <Input
+          id="email"
           name="email"
+          type="email"
+          label="Email"
+          value={form.email}
           onChange={handleChange}
-          placeholder="Email"
-          className="w-full mb-3 px-4 py-2 border rounded-lg"
+          placeholder="you@example.com"
+          required
         />
 
-        <input
-          type="password"
+        <Input
+          id="password"
           name="password"
+          type="password"
+          label="Password"
+          value={form.password}
           onChange={handleChange}
-          placeholder="Password"
-          className="w-full mb-4 px-4 py-2 border rounded-lg"
+          placeholder="••••••••"
+          required
         />
 
-        <button
-          onClick={registerUser}
-          className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition"
-        >
-          Register
-        </button>
+        <Button type="submit" fullWidth size="lg" icon={UserPlus} loading={loading}>
+          Create Account
+        </Button>
 
-        <p className="mt-4 text-center text-sm">
+        <p className="text-center text-sm text-stone-500">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600 underline">
-            Login
-          </a>
+          <Link to="/login" className="text-emerald-700 font-semibold hover:text-emerald-800">
+            Log in
+          </Link>
         </p>
-      </div>
-    </div>
+      </form>
+    </AuthLayout>
   );
 }

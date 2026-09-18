@@ -1,40 +1,52 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Search, Send, Pencil, Trash2, Users, StickyNote } from "lucide-react";
+import { useToast } from "../../context/ToastContext";
+import Card from "../../components/UI/Card";
+import Button from "../../components/UI/Button";
+import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import EmptyState from "../../components/UI/EmptyState";
+import { PageSpinner } from "../../components/UI/Spinner";
+import PaginationBar from "../../components/UI/PaginationBar";
+import usePagination from "../../hooks/usePagination";
 
-export default function NotesPanel({ token }) {
+export default function NotesPanel({ token: tokenProp }) {
+  const toast = useToast();
+  const token = tokenProp || localStorage.getItem("accessToken");
   const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState(null);
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
+  const [noteSearch, setNoteSearch] = useState("");
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editingText, setEditingText] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const dietitian = JSON.parse(localStorage.getItem("user"));
   const dietitianId = dietitian?.id;
 
   const loadClients = async () => {
+    setLoadingClients(true);
     try {
       const res = await axios.get("http://localhost:5000/api/users", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const clientsOnly = res.data.filter(
-        (user) => user.role?.toLowerCase() === "user"
-      );
-      setClients(clientsOnly);
+      setClients(res.data.filter((user) => user.role?.toLowerCase() === "user"));
     } catch (err) {
       console.error("Failed to load clients:", err);
+    } finally {
+      setLoadingClients(false);
     }
   };
 
   const loadNotes = async (clientId) => {
     if (!clientId) return;
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/notes/${clientId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.get(`http://localhost:5000/api/notes/${clientId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setNotes(res.data);
     } catch (err) {
       console.error("Failed to load notes:", err);
@@ -43,29 +55,26 @@ export default function NotesPanel({ token }) {
 
   useEffect(() => {
     loadClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (selectedClient) loadNotes(selectedClient.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClient]);
 
   const addNote = async () => {
     if (!newNote.trim()) return;
-
     try {
       await axios.post(
         "http://localhost:5000/api/notes",
-        {
-          clientId: selectedClient.id,
-          dietitianId,
-          content: newNote,
-        },
+        { clientId: selectedClient.id, dietitianId, content: newNote },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNewNote("");
       loadNotes(selectedClient.id);
     } catch (err) {
-      console.error("Failed to add note:", err);
+      toast.error("Failed to add note.");
     }
   };
 
@@ -79,153 +88,230 @@ export default function NotesPanel({ token }) {
       setEditingNoteId(null);
       setEditingText("");
       loadNotes(selectedClient.id);
+      toast.success("Note updated");
     } catch (err) {
-      console.error("Failed to update note:", err);
+      toast.error("Failed to update note.");
     }
   };
 
-  const deleteNote = async (noteId) => {
+  const deleteNote = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/notes/${noteId}`, {
+      await axios.delete(`http://localhost:5000/api/notes/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       loadNotes(selectedClient.id);
+      toast.success("Note deleted");
     } catch (err) {
-      console.error("Failed to delete note:", err);
+      toast.error("Failed to delete note.");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
-  // Filtered client list
   const filteredClients = clients.filter((c) =>
     (c.name || c.email).toLowerCase().includes(search.toLowerCase())
   );
 
+  const {
+    page: clientPage,
+    setPage: setClientPage,
+    totalPages: clientTotalPages,
+    pageItems: pagedClients,
+    itemsPerPage: clientItemsPerPage,
+    setItemsPerPage: setClientItemsPerPage,
+    totalItems: clientTotalItems,
+  } = usePagination(filteredClients, 10);
+
+  const filteredNotes = notes.filter((n) =>
+    n.content.toLowerCase().includes(noteSearch.toLowerCase())
+  );
+
+  const {
+    page: notePage,
+    setPage: setNotePage,
+    totalPages: noteTotalPages,
+    pageItems: pagedNotes,
+    itemsPerPage: noteItemsPerPage,
+    setItemsPerPage: setNoteItemsPerPage,
+    totalItems: noteTotalItems,
+  } = usePagination(filteredNotes, 10);
+
+  if (loadingClients) return <PageSpinner label="Loading clients..." />;
+
   return (
-    <div className="flex h-full gap-6">
-
-      {/* LEFT SIDE — CLIENT LIST */}
-      <div className="w-1/3 bg-white border rounded-xl shadow p-4 flex flex-col overflow-y-auto">
-        <h2 className="text-xl font-semibold mb-4">Clients</h2>
-
-        {/* SEARCH BAR */}
-        <input
-          type="text"
-          placeholder="Search clients..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-3 p-2 border rounded-lg focus:ring-2 focus:ring-green-400 outline-none"
-        />
-
-        {/* CLIENT LIST */}
-        <div className="overflow-y-auto">
-          {filteredClients.map((client) => (
-            <div
-              key={client.id}
-              onClick={() => setSelectedClient(client)}
-              className={`p-3 mb-2 rounded-lg cursor-pointer transition ${
-                selectedClient?.id === client.id
-                  ? "bg-green-100 border border-green-400"
-                  : "bg-gray-50 hover:bg-gray-100"
-              }`}
-            >
-              <p className="font-medium">{client.name || client.email}</p>
-            </div>
-          ))}
-
-          {filteredClients.length === 0 && (
-            <p className="text-gray-400 text-sm mt-4">No clients found.</p>
-          )}
-        </div>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold text-stone-900">Clients &amp; Notes</h1>
+        <p className="text-stone-500 mt-1.5">Keep track of your clients' progress and nutrition notes.</p>
       </div>
 
-      {/* RIGHT SIDE — NOTES PANEL */}
-      <div className="w-2/3 bg-white border rounded-xl shadow p-5 flex flex-col">
-        <h2 className="text-xl font-semibold mb-4">
-          {selectedClient ? `Notes for ${selectedClient.name}` : "Select a client"}
-        </h2>
-
-        {selectedClient && (
-          <div className="mb-4">
-            <textarea
-              className="w-full border rounded-lg p-3 h-24 focus:ring-2 focus:ring-green-400 outline-none"
-              placeholder="Write a note..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
+      <div className="grid lg:grid-cols-3 gap-6 items-start">
+        <Card padding="p-4" className="lg:col-span-1">
+          <div className="relative mb-4">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search clients..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="field-input pl-10"
             />
-            <button
-              onClick={addNote}
-              className="mt-2 px-5 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg"
-            >
-              Add Note
-            </button>
           </div>
-        )}
 
-        <div className="flex-1 overflow-y-auto space-y-3">
-          {selectedClient && notes.length === 0 && (
-            <p className="text-gray-500">No notes yet.</p>
-          )}
+          <div className="space-y-1.5 max-h-[60vh] overflow-y-auto scroll-thin">
+            {pagedClients.map((client) => (
+              <button
+                key={client.id}
+                onClick={() => setSelectedClient(client)}
+                className={`w-full text-left p-3 rounded-xl transition ${
+                  selectedClient?.id === client.id
+                    ? "bg-emerald-50 border border-emerald-200"
+                    : "hover:bg-stone-50 border border-transparent"
+                }`}
+              >
+                <p className="font-medium text-stone-800 text-sm truncate">{client.name || client.email}</p>
+              </button>
+            ))}
 
-          {notes.map((note) => (
-            <div key={note.id} className="bg-gray-50 border rounded-lg p-4">
-              {editingNoteId === note.id ? (
-                <>
-                  <textarea
-                    className="w-full border rounded-lg p-2 h-24"
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
+            {filteredClients.length === 0 && (
+              <EmptyState icon={Users} title="No clients found" description="Try a different search term." />
+            )}
+          </div>
+
+          <PaginationBar
+            page={clientPage}
+            totalPages={clientTotalPages}
+            setPage={setClientPage}
+            itemsPerPage={clientItemsPerPage}
+            setItemsPerPage={setClientItemsPerPage}
+            totalItems={clientTotalItems}
+            size="sm"
+            layout="stack"
+            className="mt-4"
+          />
+        </Card>
+
+        <Card className="lg:col-span-2 flex flex-col min-h-[60vh]">
+          {!selectedClient ? (
+            <EmptyState
+              icon={StickyNote}
+              title="Select a client"
+              description="Choose a client from the list to view and add nutrition notes."
+              className="flex-1"
+            />
+          ) : (
+            <>
+              <h2 className="text-lg font-display font-bold text-stone-900 mb-4">
+                Notes for {selectedClient.name || selectedClient.email}
+              </h2>
+
+              <div className="flex gap-2 mb-4">
+                <textarea
+                  className="field-input flex-1 resize-none"
+                  placeholder="Write a note..."
+                  rows={2}
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                />
+                <Button onClick={addNote} icon={Send} className="self-end">
+                  Add
+                </Button>
+              </div>
+
+              {notes.length > 5 && (
+                <div className="relative mb-4">
+                  <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    value={noteSearch}
+                    onChange={(e) => setNoteSearch(e.target.value)}
+                    placeholder="Search notes..."
+                    className="field-input pl-10"
                   />
-
-                  <div className="flex gap-3 mt-2">
-                    <button
-                      onClick={() => updateNote(note.id)}
-                      className="px-4 py-1 bg-blue-500 text-white rounded-lg"
-                    >
-                      Save
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setEditingNoteId(null);
-                        setEditingText("");
-                      }}
-                      className="px-4 py-1 bg-gray-300 rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-gray-800">{note.content}</p>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {new Date(note.createdAt).toLocaleString()}
-                  </div>
-
-                  <div className="flex gap-3 mt-3">
-                    <button
-                      onClick={() => {
-                        setEditingNoteId(note.id);
-                        setEditingText(note.content);
-                      }}
-                      className="text-blue-500 font-medium"
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      onClick={() => deleteNote(note.id)}
-                      className="text-red-500 font-medium"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </>
+                </div>
               )}
-            </div>
-          ))}
-        </div>
+
+              <div className="flex-1 overflow-y-auto scroll-thin space-y-3">
+                {notes.length === 0 ? (
+                  <EmptyState icon={StickyNote} title="No notes yet" description="Add your first note for this client above." />
+                ) : filteredNotes.length === 0 ? (
+                  <EmptyState icon={Search} title="No matching notes" description="Try a different search term." />
+                ) : null}
+
+                {pagedNotes.map((note) => (
+                  <div key={note.id} className="bg-stone-50 border border-stone-100 rounded-xl p-4">
+                    {editingNoteId === note.id ? (
+                      <>
+                        <textarea
+                          className="field-input resize-none"
+                          rows={3}
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" onClick={() => updateNote(note.id)}>Save</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { setEditingNoteId(null); setEditingText(""); }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-stone-700 text-sm leading-relaxed">{note.content}</p>
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-xs text-stone-400">
+                            {new Date(note.createdAt).toLocaleString()}
+                          </span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => { setEditingNoteId(note.id); setEditingText(note.content); }}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:bg-stone-200/60 hover:text-emerald-700 transition"
+                              aria-label="Edit note"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(note)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:bg-rose-100 hover:text-rose-600 transition"
+                              aria-label="Delete note"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <PaginationBar
+                page={notePage}
+                totalPages={noteTotalPages}
+                setPage={setNotePage}
+                itemsPerPage={noteItemsPerPage}
+                setItemsPerPage={setNoteItemsPerPage}
+                totalItems={noteTotalItems}
+                size="sm"
+                layout="stack"
+                className="mt-4"
+              />
+            </>
+          )}
+        </Card>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteNote}
+        title="Delete this note?"
+        description="This note will be permanently removed."
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

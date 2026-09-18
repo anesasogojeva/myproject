@@ -1,4 +1,5 @@
 import React from "react";
+import { Search } from "lucide-react";
 
 export default function ProductFilters({
   search,
@@ -10,21 +11,21 @@ export default function ProductFilters({
   setSort
 }) {
   return (
-    <div className="bg-white p-5 rounded-2xl shadow-sm border mb-8 flex flex-wrap items-center gap-4">
+    <div className="card p-4 sm:p-5 mb-8 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search healthy foods..."
+          className="field-input pl-10"
+        />
+      </div>
 
-      {/* Search */}
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search products..."
-        className="flex-1 min-w-[200px] border px-4 py-2 rounded-xl focus:ring-2 focus:ring-black"
-      />
-
-      {/* Category */}
       <select
         value={category}
         onChange={(e) => setCategory(e.target.value)}
-        className="border px-4 py-2 rounded-xl bg-white focus:ring-2 focus:ring-black"
+        className="field-input sm:w-52"
       >
         <option value="all">All Categories</option>
         {categories.map((c) => (
@@ -32,17 +33,15 @@ export default function ProductFilters({
         ))}
       </select>
 
-      {/* Sorting */}
       <select
         value={sort}
         onChange={(e) => setSort(e.target.value)}
-        className="border px-4 py-2 rounded-xl bg-white focus:ring-2 focus:ring-black"
+        className="field-input sm:w-52"
       >
-        <option value="default">Sort</option>
+        <option value="default">Sort by</option>
         <option value="price-asc">Price: Low → High</option>
         <option value="price-desc">Price: High → Low</option>
       </select>
     </div>
   );
 }
-
