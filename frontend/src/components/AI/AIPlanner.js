@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Sparkles, Utensils, Dumbbell, ShoppingBag, AlertCircle } from "lucide-react";
+import { Sparkles, AlertCircle, Bookmark, BookmarkCheck } from "lucide-react";
 import Card from "../UI/Card";
 import Button from "../UI/Button";
 import { Input, Select } from "../UI/FormField";
 import { CardSkeleton } from "../UI/Skeleton";
-import ProductCard from "../UI/ProductCard";
+import PlanResult from "./PlanResult";
+import useAuth from "../../hooks/useAuth";
+import { useToast } from "../../context/ToastContext";
 import { API_URL } from "../../config";
 
 export default function AIPlanner() {
+  const { token } = useAuth();
+  const toast = useToast();
   const [form, setForm] = useState({
     currentWeight: "",
     targetWeight: "",
@@ -23,6 +27,8 @@ export default function AIPlanner() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -45,11 +51,34 @@ export default function AIPlanner() {
         timeout: 5 * 60 * 1000,
       });
       setResult(res.data);
+      setSaved(false);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.details || "Plan generation failed. Make sure the backend is running.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const savePlan = async () => {
+    if (!token) {
+      toast.error("Please log in to save your plan.");
+      return;
+    }
+    try {
+      setSaving(true);
+      const goalLabel = { lose: "Lose weight", gain: "Gain weight", maintain: "Maintain weight" }[form.goal] || "Plan";
+      await axios.post(
+        `${API_URL}/api/saved-plans`,
+        { title: `${goalLabel} - ${new Date().toLocaleDateString()}`, planData: result },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSaved(true);
+      toast.success("Plan saved to your dashboard");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save plan.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -174,66 +203,19 @@ export default function AIPlanner() {
 
       {!loading && result && (
         <div className="mt-8 space-y-6 animate-fadeIn">
-          {result.summary && (
-            <Card className="bg-emerald-50 border-emerald-100">
-              <h2 className="text-lg font-display font-bold text-stone-900 mb-4">Your Summary</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: "BMI", value: result.summary.bmi },
-                  { label: "Daily calories", value: result.summary.dailyCalories },
-                  { label: "Protein target", value: `${result.summary.proteinTargetG}g` },
-                  { label: "Expected pace", value: result.summary.weeklyChange },
-                ].map((s) => (
-                  <div key={s.label}>
-                    <span className="text-xs text-stone-500">{s.label}</span>
-                    <p className="font-display font-bold text-xl text-stone-900">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              icon={saved ? BookmarkCheck : Bookmark}
+              onClick={savePlan}
+              loading={saving}
+              disabled={saved}
+            >
+              {saved ? "Saved to dashboard" : "Save this plan"}
+            </Button>
+          </div>
 
-          <Card>
-            <h2 className="text-lg font-display font-bold text-stone-900 mb-4 flex items-center gap-2">
-              <Utensils className="w-5 h-5 text-emerald-700" /> Meal Plan
-            </h2>
-            {result.mealPlan?.map((meal, i) => (
-              <div key={i} className="mb-4 pb-4 border-b border-stone-100 last:border-0 last:mb-0 last:pb-0">
-                <div className="flex justify-between items-center">
-                  <strong className="text-emerald-700">{meal.meal}</strong>
-                  <span className="text-sm text-stone-400">{meal.calories} kcal</span>
-                </div>
-                <ul className="list-disc ml-5 mt-1.5 text-stone-600 text-sm space-y-0.5">
-                  {meal.recipes?.map((r, j) => <li key={j}>{r}</li>)}
-                </ul>
-              </div>
-            ))}
-          </Card>
-
-          <Card>
-            <h2 className="text-lg font-display font-bold text-stone-900 mb-4 flex items-center gap-2">
-              <Dumbbell className="w-5 h-5 text-emerald-700" /> Fitness Plan
-            </h2>
-            {result.fitnessPlan?.map((f, i) => (
-              <div key={i} className="mb-3 flex gap-3 text-sm">
-                <span className="font-semibold text-stone-900 min-w-[90px]">{f.day}</span>
-                <span className="text-stone-600">{f.exercise}</span>
-              </div>
-            ))}
-          </Card>
-
-          {result.recommendedProducts?.length > 0 && (
-            <Card>
-              <h2 className="text-lg font-display font-bold text-stone-900 mb-4 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-emerald-700" /> Recommended from Our Store
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center">
-                {result.recommendedProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
-              </div>
-            </Card>
-          )}
+          <PlanResult result={result} />
         </div>
       )}
     </div>

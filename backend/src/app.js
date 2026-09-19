@@ -39,6 +39,7 @@ app.use("/api/cod", require("./routes/codPaymentRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/notes", require("./routes/notes"));
 app.use("/api/ai", require("./routes/aiRoutes"));
+app.use("/api/saved-plans", require("./routes/savedPlanRoutes"));
 
 
 module.exports = app;

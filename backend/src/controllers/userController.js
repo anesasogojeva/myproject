@@ -3,6 +3,7 @@ const ChatMessage = require("../models/mysql/ChatMessage");
 const { Note } = require("../models/mysql/Note");
 const Cart = require("../models/mysql/Cart");
 const CartItem = require("../models/mysql/CartItem");
+const SavedPlan = require("../models/mysql/SavedPlan");
 const bcrypt = require('bcryptjs');
 
 exports.getAllUsers = async (req, res) => {
@@ -55,6 +56,7 @@ exports.deleteUser = async (req, res) => {
         // (e.g. showing up as "Unknown User" in the dietitian chat inbox).
         await ChatMessage.destroy({ where: { userId: user.id } });
         await Note.destroy({ where: { clientId: user.id } });
+        await SavedPlan.destroy({ where: { userId: user.id } });
 
         const cart = await Cart.findOne({ where: { userId: user.id } });
         if (cart) {

@@ -10,6 +10,9 @@ import {
   StickyNote,
   User as UserIcon,
   XCircle,
+  Bookmark,
+  Eye,
+  Trash2,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { useCart } from "../../context/CartContext";
@@ -23,6 +26,8 @@ import { PageSpinner } from "../../components/UI/Spinner";
 import ImageWithFallback from "../../components/UI/ImageWithFallback";
 import PaginationBar from "../../components/UI/PaginationBar";
 import ConfirmDialog from "../../components/UI/ConfirmDialog";
+import Modal from "../../components/UI/Modal";
+import PlanResult from "../../components/AI/PlanResult";
 import usePagination from "../../hooks/usePagination";
 import { orderStatusVariant } from "../../utils/orderStatus";
 import { API_URL } from "../../config";
@@ -60,10 +65,15 @@ export default function UserDashboard() {
   const toast = useToast();
   const [orders, setOrders] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [savedPlans, setSavedPlans] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingNotes, setLoadingNotes] = useState(true);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [viewingPlan, setViewingPlan] = useState(null);
+  const [deletePlanTarget, setDeletePlanTarget] = useState(null);
+  const [deletingPlan, setDeletingPlan] = useState(false);
 
   const loadOrders = () => {
     if (!token) return;
@@ -106,6 +116,36 @@ export default function UserDashboard() {
       .finally(() => setLoadingNotes(false));
   }, [user?.id, token]);
 
+  const loadSavedPlans = () => {
+    if (!token) return;
+    setLoadingPlans(true);
+    axios
+      .get(`${API_URL}/api/saved-plans`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setSavedPlans(res.data))
+      .catch(() => setSavedPlans([]))
+      .finally(() => setLoadingPlans(false));
+  };
+
+  useEffect(loadSavedPlans, [token]);
+
+  const handleDeletePlan = async () => {
+    setDeletingPlan(true);
+    try {
+      await axios.delete(`${API_URL}/api/saved-plans/${deletePlanTarget.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Saved plan deleted");
+      loadSavedPlans();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete saved plan.");
+    } finally {
+      setDeletingPlan(false);
+      setDeletePlanTarget(null);
+    }
+  };
+
   const {
     page: orderPage,
     setPage: setOrderPage,
@@ -126,6 +166,16 @@ export default function UserDashboard() {
     totalItems: noteTotalItems,
   } = usePagination(notes, 5);
 
+  const {
+    page: planPage,
+    setPage: setPlanPage,
+    totalPages: planTotalPages,
+    pageItems: pagedPlans,
+    itemsPerPage: planItemsPerPage,
+    setItemsPerPage: setPlanItemsPerPage,
+    totalItems: planTotalItems,
+  } = usePagination(savedPlans, 5);
+
   return (
     <div className="container-app py-10 sm:py-14">
       <div className="mb-8">
@@ -135,10 +185,11 @@ export default function UserDashboard() {
         <p className="text-stone-500 mt-2">Here's an overview of your nutrition journey.</p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-5 mb-10">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         <StatCard icon={Package} label="Items in Cart" value={cart.length} tone="emerald" />
         <StatCard icon={ClipboardList} label="Total Orders" value={loadingOrders ? "–" : orderTotalItems} tone="sky" />
         <StatCard icon={StickyNote} label="Dietitian Notes" value={loadingNotes ? "–" : noteTotalItems} tone="amber" />
+        <StatCard icon={Bookmark} label="Saved Plans" value={loadingPlans ? "–" : planTotalItems} tone="rose" />
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
@@ -261,6 +312,64 @@ export default function UserDashboard() {
         </Card>
       </div>
 
+      <Card className="mt-8">
+        <h2 className="text-lg font-display font-bold text-stone-900 mb-5">Saved Nutrition Plans</h2>
+        {loadingPlans ? (
+          <PageSpinner label="Loading saved plans..." />
+        ) : savedPlans.length === 0 ? (
+          <EmptyState
+            icon={Bookmark}
+            title="No saved plans yet"
+            description="Generate a plan with the AI Nutrition Planner and save it to see it here later."
+            action={<Button to="/ai-planner">Open AI Planner</Button>}
+          />
+        ) : (
+          <>
+            <div className="space-y-3">
+              {pagedPlans.map((plan) => (
+                <div
+                  key={plan.id}
+                  className="flex items-center justify-between gap-4 p-3 rounded-xl border border-stone-100"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-stone-800 text-sm truncate">{plan.title}</p>
+                    <p className="text-xs text-stone-400">
+                      Saved {new Date(plan.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button
+                      onClick={() => setViewingPlan(plan)}
+                      className="flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 transition"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> View
+                    </button>
+                    <button
+                      onClick={() => setDeletePlanTarget(plan)}
+                      className="flex items-center gap-1 text-xs text-stone-400 hover:text-rose-600 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <PaginationBar
+              page={planPage}
+              totalPages={planTotalPages}
+              setPage={setPlanPage}
+              itemsPerPage={planItemsPerPage}
+              setItemsPerPage={setPlanItemsPerPage}
+              totalItems={planTotalItems}
+              size="sm"
+              layout="stack"
+              className="mt-5"
+            />
+          </>
+        )}
+      </Card>
+
       <Card className="mt-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -284,6 +393,25 @@ export default function UserDashboard() {
         title="Cancel this order?"
         description={`Order #${cancelTarget?.id} will be cancelled. This can't be undone.`}
         confirmLabel="Cancel Order"
+      />
+
+      <Modal
+        open={!!viewingPlan}
+        onClose={() => setViewingPlan(null)}
+        title={viewingPlan?.title}
+        size="xl"
+      >
+        <PlanResult result={viewingPlan?.planData} />
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deletePlanTarget}
+        onClose={() => setDeletePlanTarget(null)}
+        onConfirm={handleDeletePlan}
+        loading={deletingPlan}
+        title="Delete this saved plan?"
+        description={`"${deletePlanTarget?.title}" will be deleted. This can't be undone.`}
+        confirmLabel="Delete Plan"
       />
     </div>
   );
