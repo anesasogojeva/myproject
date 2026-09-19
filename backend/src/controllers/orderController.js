@@ -136,14 +136,21 @@ exports.getOrderById = async (req, res) => {
 exports.cancelOrder = async (req, res) => {
     try {
         const userId = req.user.id;
+        const isAdmin = req.user.role === "admin";
         const { id } = req.params;
 
         const order = await Order.findByPk(id);
 
         if (!order) return res.status(404).json({ message: "Order not found" });
 
-        if (order.userId !== userId)
+        if (order.userId !== userId && !isAdmin)
             return res.status(403).json({ message: "Not your order" });
+
+        // Customers can only self-cancel before payment has actually gone
+        // through; once an order is paid, cancelling it needs a real refund,
+        // which only an admin can currently handle.
+        if (order.status === "paid" && !isAdmin)
+            return res.status(400).json({ message: "This order has already been paid and can no longer be cancelled. Please contact support." });
 
         await order.destroy();
 

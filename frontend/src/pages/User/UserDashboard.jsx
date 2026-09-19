@@ -9,9 +9,11 @@ import {
   ClipboardList,
   StickyNote,
   User as UserIcon,
+  XCircle,
 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import { useCart } from "../../context/CartContext";
+import { useToast } from "../../context/ToastContext";
 import Card from "../../components/UI/Card";
 import Button from "../../components/UI/Button";
 import Badge from "../../components/UI/Badge";
@@ -20,6 +22,7 @@ import EmptyState from "../../components/UI/EmptyState";
 import { PageSpinner } from "../../components/UI/Spinner";
 import ImageWithFallback from "../../components/UI/ImageWithFallback";
 import PaginationBar from "../../components/UI/PaginationBar";
+import ConfirmDialog from "../../components/UI/ConfirmDialog";
 import usePagination from "../../hooks/usePagination";
 import { orderStatusVariant } from "../../utils/orderStatus";
 import { API_URL } from "../../config";
@@ -54,13 +57,17 @@ const quickLinks = [
 export default function UserDashboard() {
   const { user, token } = useAuth();
   const { cart } = useCart();
+  const toast = useToast();
   const [orders, setOrders] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingNotes, setLoadingNotes] = useState(true);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
+  const loadOrders = () => {
     if (!token) return;
+    setLoadingOrders(true);
     axios
       .get(`${API_URL}/api/order/my-orders`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -68,7 +75,25 @@ export default function UserDashboard() {
       .then((res) => setOrders(res.data))
       .catch(() => setOrders([]))
       .finally(() => setLoadingOrders(false));
-  }, [token]);
+  };
+
+  useEffect(loadOrders, [token]);
+
+  const handleCancelOrder = async () => {
+    setCancelling(true);
+    try {
+      await axios.delete(`${API_URL}/api/order/${cancelTarget.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Order cancelled");
+      loadOrders();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to cancel order.");
+    } finally {
+      setCancelling(false);
+      setCancelTarget(null);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -168,6 +193,14 @@ export default function UserDashboard() {
                       <Badge variant={orderStatusVariant(order.status)} className="capitalize mt-1">
                         {order.status.replace("_", " ")}
                       </Badge>
+                      {order.status !== "paid" && (
+                        <button
+                          onClick={() => setCancelTarget(order)}
+                          className="flex items-center gap-1 text-xs text-stone-400 hover:text-rose-600 transition mt-1.5 ml-auto"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -242,6 +275,16 @@ export default function UserDashboard() {
           {user?.role}
         </Badge>
       </Card>
+
+      <ConfirmDialog
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={handleCancelOrder}
+        loading={cancelling}
+        title="Cancel this order?"
+        description={`Order #${cancelTarget?.id} will be cancelled. This can't be undone.`}
+        confirmLabel="Cancel Order"
+      />
     </div>
   );
 }
