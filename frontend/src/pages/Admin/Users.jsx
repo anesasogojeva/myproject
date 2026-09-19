@@ -12,6 +12,7 @@ import { TableRowSkeleton } from "../../components/UI/Skeleton";
 import EmptyState from "../../components/UI/EmptyState";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
+import { API_URL } from "../../config";
 
 const allowedRoles = ["user", "admin", "dietitian"];
 const emptyForm = { name: "", email: "", role: "user", password: "" };
@@ -53,7 +54,7 @@ export default function Users() {
   const fetchUsers = () => {
     setLoading(true);
     axios
-      .get("http://localhost:5000/api/users", {
+      .get(`${API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setUsers(res.data))
@@ -85,12 +86,12 @@ export default function Users() {
     setSaving(true);
     try {
       if (editingUser) {
-        await axios.put(`http://localhost:5000/api/users/${editingUser.id}`, form, {
+        await axios.put(`${API_URL}/api/users/${editingUser.id}`, form, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("User updated successfully");
       } else {
-        await axios.post("http://localhost:5000/api/users/create-user", form, {
+        await axios.post(`${API_URL}/api/users/create-user`, form, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("User created successfully");
@@ -107,7 +108,7 @@ export default function Users() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:5000/api/users/${deleteTarget.id}`, {
+      await axios.delete(`${API_URL}/api/users/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("User deleted");

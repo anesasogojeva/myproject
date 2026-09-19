@@ -3,8 +3,9 @@ import io from "socket.io-client";
 import axios from "axios";
 import { Send, MessageCircle } from "lucide-react";
 import EmptyState from "../../components/UI/EmptyState";
+import { API_URL } from "../../config";
 
-const socket = io("http://localhost:5000");
+const socket = io(API_URL);
 
 export default function DieticianChat({ token: tokenProp, userId }) {
   const token = tokenProp || localStorage.getItem("accessToken");
@@ -50,7 +51,7 @@ export default function DieticianChat({ token: tokenProp, userId }) {
 
   const loadMessages = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/chat/${userId}`, {
+      const res = await axios.get(`${API_URL}/api/chat/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

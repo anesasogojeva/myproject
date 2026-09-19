@@ -4,6 +4,7 @@ import { KeyRound } from "lucide-react";
 import AuthLayout from "../../components/Layout/AuthLayout";
 import { Input } from "../../components/UI/FormField";
 import Button from "../../components/UI/Button";
+import { API_URL } from "../../config";
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
@@ -15,7 +16,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
+      const res = await fetch(`${API_URL}/api/auth/reset-password/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),

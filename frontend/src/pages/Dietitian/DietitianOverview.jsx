@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import StatCard from "../../components/UI/StatCard";
 import Card from "../../components/UI/Card";
 import { CardSkeleton } from "../../components/UI/Skeleton";
+import { API_URL } from "../../config";
 
 export default function DietitianOverview() {
   const [clientCount, setClientCount] = useState(null);
@@ -16,11 +17,11 @@ export default function DietitianOverview() {
   useEffect(() => {
     Promise.all([
       axios
-        .get("http://localhost:5000/api/users", { headers: { Authorization: `Bearer ${token}` } })
+        .get(`${API_URL}/api/users`, { headers: { Authorization: `Bearer ${token}` } })
         .then((res) => res.data.filter((u) => u.role?.toLowerCase() === "user").length)
         .catch(() => 0),
       axios
-        .get("http://localhost:5000/api/chat/inbox", { headers: { Authorization: `Bearer ${token}` } })
+        .get(`${API_URL}/api/chat/inbox`, { headers: { Authorization: `Bearer ${token}` } })
         .then((res) => res.data.length)
         .catch(() => 0),
     ]).then(([clients, inbox]) => {

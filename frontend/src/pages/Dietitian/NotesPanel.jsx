@@ -9,6 +9,7 @@ import EmptyState from "../../components/UI/EmptyState";
 import { PageSpinner } from "../../components/UI/Spinner";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
+import { API_URL } from "../../config";
 
 export default function NotesPanel({ token: tokenProp }) {
   const toast = useToast();
@@ -30,7 +31,7 @@ export default function NotesPanel({ token: tokenProp }) {
   const loadClients = async () => {
     setLoadingClients(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/users", {
+      const res = await axios.get(`${API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setClients(res.data.filter((user) => user.role?.toLowerCase() === "user"));
@@ -44,7 +45,7 @@ export default function NotesPanel({ token: tokenProp }) {
   const loadNotes = async (clientId) => {
     if (!clientId) return;
     try {
-      const res = await axios.get(`http://localhost:5000/api/notes/${clientId}`, {
+      const res = await axios.get(`${API_URL}/api/notes/${clientId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotes(res.data);
@@ -67,7 +68,7 @@ export default function NotesPanel({ token: tokenProp }) {
     if (!newNote.trim()) return;
     try {
       await axios.post(
-        "http://localhost:5000/api/notes",
+        `${API_URL}/api/notes`,
         { clientId: selectedClient.id, dietitianId, content: newNote },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -81,7 +82,7 @@ export default function NotesPanel({ token: tokenProp }) {
   const updateNote = async (noteId) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/notes/${noteId}`,
+        `${API_URL}/api/notes/${noteId}`,
         { content: editingText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -96,7 +97,7 @@ export default function NotesPanel({ token: tokenProp }) {
 
   const deleteNote = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/notes/${deleteTarget.id}`, {
+      await axios.delete(`${API_URL}/api/notes/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       loadNotes(selectedClient.id);

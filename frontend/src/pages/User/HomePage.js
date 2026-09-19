@@ -18,6 +18,7 @@ import Button from "../../components/UI/Button";
 import Card from "../../components/UI/Card";
 import { ProductCardSkeleton } from "../../components/UI/Skeleton";
 import ProductCard from "../../components/UI/ProductCard";
+import { API_URL } from "../../config";
 
 const services = [
   {
@@ -75,7 +76,7 @@ export default function HomePage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products")
+    fetch(`${API_URL}/api/products`)
       .then((res) => res.json())
       .then((data) => setProducts(Array.isArray(data) ? data.slice(0, 4) : []))
       .catch(() => setProducts([]))

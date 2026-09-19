@@ -11,6 +11,7 @@ import ImageWithFallback from "../../components/UI/ImageWithFallback";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
 import { orderStatusVariant as statusVariant } from "../../utils/orderStatus";
+import { API_URL } from "../../config";
 
 export default function OrdersDashboard() {
   const toast = useToast();
@@ -47,7 +48,7 @@ export default function OrdersDashboard() {
   const fetchOrders = () => {
     setLoading(true);
     axios
-      .get("http://localhost:5000/api/order", {
+      .get(`${API_URL}/api/order`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setOrders(res.data))
@@ -63,7 +64,7 @@ export default function OrdersDashboard() {
   const handleCancel = async () => {
     setCancelling(true);
     try {
-      await axios.delete(`http://localhost:5000/api/order/${cancelTarget.id}`, {
+      await axios.delete(`${API_URL}/api/order/${cancelTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Order cancelled");

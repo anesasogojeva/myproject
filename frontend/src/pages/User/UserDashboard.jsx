@@ -22,6 +22,7 @@ import ImageWithFallback from "../../components/UI/ImageWithFallback";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
 import { orderStatusVariant } from "../../utils/orderStatus";
+import { API_URL } from "../../config";
 
 const quickLinks = [
   {
@@ -61,7 +62,7 @@ export default function UserDashboard() {
   useEffect(() => {
     if (!token) return;
     axios
-      .get("http://localhost:5000/api/order/my-orders", {
+      .get(`${API_URL}/api/order/my-orders`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setOrders(res.data))
@@ -72,7 +73,7 @@ export default function UserDashboard() {
   useEffect(() => {
     if (!user?.id) return;
     axios
-      .get(`http://localhost:5000/api/notes/${user.id}`, {
+      .get(`${API_URL}/api/notes/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setNotes(res.data))

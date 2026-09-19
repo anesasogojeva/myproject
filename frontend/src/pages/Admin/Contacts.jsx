@@ -9,6 +9,7 @@ import { TableRowSkeleton } from "../../components/UI/Skeleton";
 import EmptyState from "../../components/UI/EmptyState";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
+import { API_URL } from "../../config";
 
 export default function Contacts() {
   const toast = useToast();
@@ -38,7 +39,7 @@ export default function Contacts() {
   const fetchContacts = () => {
     setLoading(true);
     axios
-      .get("http://localhost:5000/api/contact", {
+      .get(`${API_URL}/api/contact`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setContacts(res.data))
@@ -54,7 +55,7 @@ export default function Contacts() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:5000/api/contact/${deleteTarget.id}`, {
+      await axios.delete(`${API_URL}/api/contact/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Message deleted");

@@ -7,6 +7,7 @@ import MiniCart from "../../components/UI/MiniCart";
 import EmptyState from "../../components/UI/EmptyState";
 import { ProductCardSkeleton } from "../../components/UI/Skeleton";
 import usePagination from "../../hooks/usePagination";
+import { API_URL } from "../../config";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -30,7 +31,7 @@ export default function ProductsPage() {
   } = usePagination(filtered, 25);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products")
+    fetch(`${API_URL}/api/products`)
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);

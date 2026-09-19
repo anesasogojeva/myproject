@@ -6,6 +6,7 @@ import Button from "../UI/Button";
 import { Input, Select } from "../UI/FormField";
 import { CardSkeleton } from "../UI/Skeleton";
 import ProductCard from "../UI/ProductCard";
+import { API_URL } from "../../config";
 
 export default function AIPlanner() {
   const [form, setForm] = useState({
@@ -40,7 +41,7 @@ export default function AIPlanner() {
     try {
       setLoading(true);
       setError("");
-      const res = await axios.post("http://localhost:5000/api/ai/plan", form, {
+      const res = await axios.post(`${API_URL}/api/ai/plan`, form, {
         timeout: 5 * 60 * 1000,
       });
       setResult(res.data);

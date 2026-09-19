@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { socket } from "../../hooks/socket";
 import { Send, MessageCircle } from "lucide-react";
 import EmptyState from "../UI/EmptyState";
+import { API_URL } from "../../config";
 
 export default function Chat({ userId, role }) {
   const [chat, setChat] = useState([]);
@@ -23,7 +24,7 @@ export default function Chat({ userId, role }) {
     const loadChat = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/chat/${userId}`);
+        const res = await fetch(`${API_URL}/api/chat/${userId}`);
         const data = await res.json();
         setChat(
           data.map((m) => ({

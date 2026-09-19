@@ -6,6 +6,7 @@ import SectionHeading from "../../components/UI/SectionHeading";
 import Card from "../../components/UI/Card";
 import Button from "../../components/UI/Button";
 import { Input, Textarea } from "../../components/UI/FormField";
+import { API_URL } from "../../config";
 
 const values = [
   {
@@ -42,7 +43,7 @@ export default function AboutPage() {
     e.preventDefault();
     setSending(true);
     try {
-      const res = await fetch("http://localhost:5000/api/contact", {
+      const res = await fetch(`${API_URL}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

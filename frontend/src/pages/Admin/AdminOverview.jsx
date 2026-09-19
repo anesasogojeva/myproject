@@ -15,6 +15,7 @@ import HorizontalBarList from "../../components/UI/HorizontalBarList";
 import ImageWithFallback from "../../components/UI/ImageWithFallback";
 import { CardSkeleton } from "../../components/UI/Skeleton";
 import EmptyState from "../../components/UI/EmptyState";
+import { API_URL } from "../../config";
 
 const quickActions = [
   { icon: Users, title: "Manage Users", text: "Add, edit or remove platform users.", to: "/admin/users" },
@@ -35,10 +36,10 @@ export default function AdminOverview() {
   useEffect(() => {
     const headers = { Authorization: `Bearer ${token}` };
     Promise.all([
-      axios.get("http://localhost:5000/api/users", { headers }).then((r) => r.data).catch(() => []),
-      axios.get("http://localhost:5000/api/products", { headers }).then((r) => r.data).catch(() => []),
-      axios.get("http://localhost:5000/api/order", { headers }).then((r) => r.data).catch(() => []),
-      axios.get("http://localhost:5000/api/contact", { headers }).then((r) => r.data).catch(() => []),
+      axios.get(`${API_URL}/api/users`, { headers }).then((r) => r.data).catch(() => []),
+      axios.get(`${API_URL}/api/products`, { headers }).then((r) => r.data).catch(() => []),
+      axios.get(`${API_URL}/api/order`, { headers }).then((r) => r.data).catch(() => []),
+      axios.get(`${API_URL}/api/contact`, { headers }).then((r) => r.data).catch(() => []),
     ]).then(([u, p, o, c]) => {
       setUsers(u);
       setProducts(p);

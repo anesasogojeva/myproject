@@ -1,6 +1,7 @@
 // CartContext.js
 import { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "./ToastContext";
+import { API_URL } from "../config";
 
 const CartContext = createContext();
 
@@ -12,7 +13,7 @@ export function CartProvider({ children }) {
   // Load cart from backend
   useEffect(() => {
     if (!token) return;
-    fetch("http://localhost:5000/api/cart", {
+    fetch(`${API_URL}/api/cart`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -27,7 +28,7 @@ export function CartProvider({ children }) {
       return;
     }
 
-    const res = await fetch("http://localhost:5000/api/cart/add", {
+    const res = await fetch(`${API_URL}/api/cart/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -56,7 +57,7 @@ export function CartProvider({ children }) {
   // Remove product
   const removeFromCart = async (cartItemId) => {
     if (!token) return;
-    await fetch(`http://localhost:5000/api/cart/${cartItemId}`, {
+    await fetch(`${API_URL}/api/cart/${cartItemId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -71,7 +72,7 @@ export function CartProvider({ children }) {
     const cartItem = cart.find(i => i.id === cartItemId);
     if (!cartItem) return;
 
-    const res = await fetch(`http://localhost:5000/api/cart/${cartItemId}`, {
+    const res = await fetch(`${API_URL}/api/cart/${cartItemId}`, {
       method: "PUT",
       headers: { 
         "Content-Type": "application/json",

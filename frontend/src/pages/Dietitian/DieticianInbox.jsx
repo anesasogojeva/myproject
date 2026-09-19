@@ -5,8 +5,9 @@ import { MessageSquare, Search } from "lucide-react";
 import EmptyState from "../../components/UI/EmptyState";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
+import { API_URL } from "../../config";
 
-const socket = io("http://localhost:5000");
+const socket = io(API_URL);
 
 export default function DieticianInbox({ token: tokenProp, onSelectUser, selectedUserId }) {
   const token = tokenProp || localStorage.getItem("accessToken");
@@ -34,7 +35,7 @@ export default function DieticianInbox({ token: tokenProp, onSelectUser, selecte
 
   const loadInbox = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/chat/inbox", {
+      const res = await axios.get(`${API_URL}/api/chat/inbox`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setInbox(res.data);

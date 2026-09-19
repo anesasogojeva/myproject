@@ -8,6 +8,7 @@ import ProductCard from "../../components/UI/ProductCard";
 import Button from "../../components/UI/Button";
 import { PageSpinner } from "../../components/UI/Spinner";
 import ImageWithFallback from "../../components/UI/ImageWithFallback";
+import { API_URL } from "../../config";
 import EmptyState from "../../components/UI/EmptyState";
 
 export default function ProductPage() {
@@ -21,7 +22,7 @@ export default function ProductPage() {
   useEffect(() => {
     setProduct(null);
     setNotFound(false);
-    fetch(`http://localhost:5000/api/products/${id}`)
+    fetch(`${API_URL}/api/products/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Product not found");
         return res.json();
@@ -32,7 +33,7 @@ export default function ProductPage() {
       })
       .catch(() => setNotFound(true));
 
-    fetch("http://localhost:5000/api/products")
+    fetch(`${API_URL}/api/products`)
       .then((res) => res.json())
       .then((data) => {
         const filtered = data.filter((p) => p.id !== parseInt(id));

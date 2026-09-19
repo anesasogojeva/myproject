@@ -12,6 +12,7 @@ import EmptyState from "../../components/UI/EmptyState";
 import ImageWithFallback from "../../components/UI/ImageWithFallback";
 import PaginationBar from "../../components/UI/PaginationBar";
 import usePagination from "../../hooks/usePagination";
+import { API_URL } from "../../config";
 
 const emptyForm = { name: "", price: "", description: "", image: "", category: "" };
 
@@ -51,7 +52,7 @@ export default function Products() {
   const fetchProducts = () => {
     setLoading(true);
     axios
-      .get("http://localhost:5000/api/products", {
+      .get(`${API_URL}/api/products`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setProducts(res.data))
@@ -89,12 +90,12 @@ export default function Products() {
     setSaving(true);
     try {
       if (editingProduct) {
-        await axios.put(`http://localhost:5000/api/products/${editingProduct.id}`, form, {
+        await axios.put(`${API_URL}/api/products/${editingProduct.id}`, form, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("Product updated successfully");
       } else {
-        await axios.post("http://localhost:5000/api/products", form, {
+        await axios.post(`${API_URL}/api/products`, form, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("Product added successfully");
@@ -112,7 +113,7 @@ export default function Products() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:5000/api/products/${deleteTarget.id}`, {
+      await axios.delete(`${API_URL}/api/products/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Product deleted");

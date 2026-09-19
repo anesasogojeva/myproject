@@ -4,6 +4,7 @@ import { UserPlus } from "lucide-react";
 import AuthLayout from "../../components/Layout/AuthLayout";
 import { Input } from "../../components/UI/FormField";
 import Button from "../../components/UI/Button";
+import { API_URL } from "../../config";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -18,7 +19,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

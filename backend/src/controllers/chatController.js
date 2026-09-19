@@ -13,7 +13,10 @@ exports.getChatInbox = async (req, res) => {
         [ChatMessage.sequelize.fn("MAX", ChatMessage.sequelize.col("createdAt")), "lastMessageTime"],
       ],
       group: ["userId"],
-      order: [[ChatMessage.sequelize.literal("lastMessageTime"), "DESC"]],
+      // Order by the aggregate expression itself rather than its alias -
+      // Postgres lowercases unquoted identifiers, so ordering by the bare
+      // "lastMessageTime" alias fails there even though MySQL allowed it.
+      order: [[ChatMessage.sequelize.fn("MAX", ChatMessage.sequelize.col("createdAt")), "DESC"]],
     });
 
     const result = [];

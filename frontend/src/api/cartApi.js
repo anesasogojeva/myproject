@@ -1,5 +1,7 @@
+import { API_URL } from "../config";
+
 export async function addToCart(productId, quantity = 1) {
-  const response = await fetch("http://localhost:5000/api/cart/add", {
+  const response = await fetch(`${API_URL}/api/cart/add`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -16,7 +18,7 @@ export async function addToCart(productId, quantity = 1) {
 }
 
 export async function fetchCart() {
-  const response = await fetch("http://localhost:5000/api/cart", {
+  const response = await fetch(`${API_URL}/api/cart`, {
     headers: {
       Authorization: "Bearer " + localStorage.getItem("token"),
     },
