@@ -50,6 +50,7 @@ export default function Header({ setMiniCartOpen }) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authchange"));
     setAuthVersion((v) => v + 1);
     setOpen(false);
     setAccountOpen(false);

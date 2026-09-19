@@ -11,6 +11,7 @@ export default function DashboardShell({ title, menu, basePath = "" }) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authchange"));
     navigate("/home");
   };
 

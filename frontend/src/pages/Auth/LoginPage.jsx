@@ -36,6 +36,7 @@ export default function LoginPage() {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
+      window.dispatchEvent(new Event("authchange"));
 
       navigate("/");
     } catch (err) {

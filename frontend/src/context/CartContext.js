@@ -7,12 +7,30 @@ const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
-  const token = localStorage.getItem("accessToken");
+  const [token, setToken] = useState(() => localStorage.getItem("accessToken"));
   const toast = useToast();
 
-  // Load cart from backend
+  // localStorage isn't reactive on its own - nothing re-renders this
+  // provider just because another component logged in or out. Login/logout
+  // dispatch a window "authchange" event (see LoginPage/Header) so this
+  // stays in sync instead of only picking up the new token on whatever
+  // render happens to come next.
   useEffect(() => {
-    if (!token) return;
+    const syncToken = () => setToken(localStorage.getItem("accessToken"));
+    window.addEventListener("authchange", syncToken);
+    window.addEventListener("storage", syncToken);
+    return () => {
+      window.removeEventListener("authchange", syncToken);
+      window.removeEventListener("storage", syncToken);
+    };
+  }, []);
+
+  // Load cart from backend (or clear it once logged out)
+  useEffect(() => {
+    if (!token) {
+      setCart([]);
+      return;
+    }
     fetch(`${API_URL}/api/cart`, {
       headers: { Authorization: `Bearer ${token}` },
     })
