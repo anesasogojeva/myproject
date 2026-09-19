@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Sparkles, Users, Star, Mail, Phone, MapPin } from "lucide-react";
+import { ShieldCheck, Sparkles, Users, Star, Mail, Phone, MapPin, GraduationCap, Award, HeartHandshake, CheckCircle2 } from "lucide-react";
 import { useToast } from "../../context/ToastContext";
 import SectionHeading from "../../components/UI/SectionHeading";
 import Card from "../../components/UI/Card";
@@ -24,6 +24,13 @@ const values = [
     title: "Trusted by Our Community",
     text: "Thousands of members rely on FitLife for their day-to-day nutrition and wellness needs.",
   },
+];
+
+const dietitianCredentials = [
+  { icon: GraduationCap, text: "Master's degree in Clinical Nutrition & Dietetics" },
+  { icon: Award, text: "Registered Dietitian (RD), nationally certified" },
+  { icon: HeartHandshake, text: "8+ years of clinical and sports nutrition experience" },
+  { icon: CheckCircle2, text: "Certified Nutrition Specialist (CNS)" },
 ];
 
 const testimonials = [
@@ -105,6 +112,60 @@ export default function AboutPage() {
               <p className="text-stone-500 text-sm leading-relaxed">{v.text}</p>
             </Card>
           ))}
+        </div>
+      </section>
+
+      {/* MEET OUR DIETITIAN */}
+      <section className="container-app py-20 sm:py-24">
+        <SectionHeading
+          eyebrow="Meet the Expert"
+          title="Meet our dietitian"
+          subtitle="The nutrition expertise behind every plan, note, and recommendation on FitLife."
+        />
+        <div className="grid md:grid-cols-2 gap-10 max-w-4xl mx-auto items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <img
+              src="https://images.unsplash.com/photo-1675270882554-ab6817fb44f3?fm=jpg&q=80&w=1200&auto=format&fit=crop"
+              alt="Elena Cross, FitLife's lead dietitian"
+              className="w-full h-80 sm:h-96 object-cover rounded-2xl shadow-elevated"
+            />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <h3 className="text-2xl font-display font-bold text-stone-900">Elena Cross, RD</h3>
+            <p className="text-emerald-700 font-medium mt-1">Lead Dietitian & Nutrition Coach</p>
+            <p className="mt-4 text-stone-600 leading-relaxed">
+              Elena has spent the last eight years helping clients build sustainable, science-backed
+              nutrition habits — not quick fixes. She specializes in weight management, sports
+              nutrition, and long-term lifestyle coaching, and works one-on-one with FitLife members
+              through personalized notes and chat to keep every plan realistic and rooted in real life.
+            </p>
+
+            <ul className="mt-6 space-y-3">
+              {dietitianCredentials.map((c) => (
+                <li key={c.text} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <c.icon className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm text-stone-600 leading-relaxed pt-1">{c.text}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Button to="/chat" className="mt-7" icon={Sparkles}>
+              Chat with our dietitian
+            </Button>
+          </motion.div>
         </div>
       </section>
 
